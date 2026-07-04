@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Site de Gestão — Dr. Alberto Rassi
 
-## Getting Started
+Painel interno (médico + secretária) que convive com o chatbot de WhatsApp em
+produção (n8n). Contexto completo em `docs/CONTEXTO_DR_ALBERTO_RASSI.md` e
+especificação em `docs/SITE_DR_ALBERTO_ESPECIFICACAO.md`.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Next.js 15 (App Router, TypeScript, Tailwind + shadcn/ui) · Supabase
+(Postgres + Auth) · Google Calendar/Sheets (**somente leitura**) · Evolution
+API (WhatsApp) · worker `node-cron` (mesma imagem Docker).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Regras invioláveis (não quebrar)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Nunca** notificar o Dr. Alberto por evento — só o relatório agendado.
+2. **Nenhuma escrita no Google Calendar** pelo site (sem trava de
+   concorrência com o bot ainda). Todo acesso Google usa escopos readonly.
+3. Todo envio de WhatsApp passa por `src/lib/evolution.ts` (allowlist +
+   `message_log`). Safe mode (default) redireciona tudo para `11939011304`.
+4. Não mexer no workflow n8n, nem escrever no Sheets.
+5. Dado de paciente sempre atrás de login (middleware + RLS).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+1. **Supabase**: criar projeto, rodar `supabase/migrations/0001_initial.sql`
+   no SQL Editor. Criar os dois usuários (médico e secretária) em
+   Authentication → Users e inserir os perfis:
+   ```sql
+   insert into profiles (id, name, role) values
+     ('<uuid-do-user>', 'Dr. Alberto', 'medico'),
+     ('<uuid-do-user>', 'Nome da secretária', 'secretaria');
+   ```
+2. **Google**: service account com acesso de leitura ao calendário e à
+   planilha de leads (compartilhar ambos com o e-mail da SA).
+3. `.env`: copiar `.env.example` e preencher.
+4. `npm install && npm run dev` (site) e `npm run worker` (jobs).
 
-To learn more about Next.js, take a look at the following resources:
+## Comandos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Comando | O quê |
+|---|---|
+| `npm run dev` / `build` / `start` | site |
+| `npm run worker` | worker de cron (radar 15min, lembretes 08:00, relatório) |
+| `npm run worker -- --run followups\|report\|radar` | roda um job uma vez (verificação) |
+| `npm run sanity` | lê agenda + leads reais (somente leitura) e imprime |
+| `npm test` | testes unitários (Vitest) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy (Easypanel, mesma VPS do n8n)
 
-## Deploy on Vercel
+Dois serviços apontando para a mesma imagem (este `Dockerfile`):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **web**: comando padrão, porta 3000, com as envs de runtime + build args
+  `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- **worker**: mesmo build, comando `npm run worker`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`WHATSAPP_SAFE_MODE=false` **só** depois de ok explícito do Matheus.
