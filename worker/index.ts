@@ -12,6 +12,7 @@ import "dotenv/config";
 import cron from "node-cron";
 import { createAdminClient } from "../src/lib/supabase/admin";
 import { runFollowUpReminders } from "../src/lib/jobs/followup-reminders";
+import { runPeriodicReport } from "../src/lib/jobs/periodic-report";
 
 const TZ = "America/Sao_Paulo";
 
@@ -23,8 +24,30 @@ async function followups() {
   );
 }
 
+async function report() {
+  const supabase = createAdminClient();
+  const result = await runPeriodicReport(supabase);
+  console.log(
+    `[report] ${new Date().toISOString()} enviado=${result.sent}${result.reason ? ` (${result.reason})` : ""}`
+  );
+}
+
+/** Roda o relatório apenas se a periodicidade configurada bater com o cron. */
+async function reportIfPeriod(period: "semanal" | "mensal") {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", "report_period")
+    .maybeSingle();
+  const configured = data?.value === "mensal" ? "mensal" : "semanal";
+  if (configured !== period) return;
+  await report();
+}
+
 const MANUAL_JOBS: Record<string, () => Promise<void>> = {
   followups,
+  report,
 };
 
 async function main() {
@@ -44,8 +67,16 @@ async function main() {
 
   console.log("Worker iniciado. Jobs agendados:");
   console.log("  - lembretes de retorno: diário 08:00", TZ);
+  console.log("  - relatório semanal: segunda 07:00 (se report_period=semanal)");
+  console.log("  - relatório mensal: dia 1, 07:00 (se report_period=mensal)");
 
   cron.schedule("0 8 * * *", () => followups().catch(console.error), {
+    timezone: TZ,
+  });
+  cron.schedule("0 7 * * 1", () => reportIfPeriod("semanal").catch(console.error), {
+    timezone: TZ,
+  });
+  cron.schedule("0 7 1 * *", () => reportIfPeriod("mensal").catch(console.error), {
     timezone: TZ,
   });
 }
