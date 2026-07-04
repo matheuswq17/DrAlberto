@@ -13,6 +13,7 @@ import cron from "node-cron";
 import { createAdminClient } from "../src/lib/supabase/admin";
 import { runFollowUpReminders } from "../src/lib/jobs/followup-reminders";
 import { runPeriodicReport } from "../src/lib/jobs/periodic-report";
+import { runRadar } from "../src/lib/jobs/radar";
 
 const TZ = "America/Sao_Paulo";
 
@@ -45,9 +46,18 @@ async function reportIfPeriod(period: "semanal" | "mensal") {
   await report();
 }
 
+async function radar() {
+  const supabase = createAdminClient();
+  const result = await runRadar(supabase);
+  console.log(
+    `[radar] ${new Date().toISOString()} vagas_novas=${result.freedDetected} eventos_no_snapshot=${result.snapshotSize}`
+  );
+}
+
 const MANUAL_JOBS: Record<string, () => Promise<void>> = {
   followups,
   report,
+  radar,
 };
 
 async function main() {
@@ -77,6 +87,10 @@ async function main() {
     timezone: TZ,
   });
   cron.schedule("0 7 1 * *", () => reportIfPeriod("mensal").catch(console.error), {
+    timezone: TZ,
+  });
+  console.log("  - radar de vagas: a cada 15 minutos");
+  cron.schedule("*/15 * * * *", () => radar().catch(console.error), {
     timezone: TZ,
   });
 }
