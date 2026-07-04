@@ -34,3 +34,11 @@ export function stripUnitPrefix(title: string | null | undefined): string {
   }
   return title.trim();
 }
+
+// O bot cria eventos como "Consulta - Nome do Paciente"; para exibição e
+// match com o Sheets, o que interessa é só o nome.
+const CONSULTA_PREFIX = /^consulta\s*[-–—:]\s*/i;
+
+export function extractPatientLabel(title: string | null | undefined): string {
+  return stripUnitPrefix(title).replace(CONSULTA_PREFIX, "").trim();
+}

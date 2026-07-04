@@ -30,6 +30,17 @@ describe("parseUnitFromTitle", () => {
   });
 });
 
+describe("extractPatientLabel", () => {
+  it("remove unidade e o prefixo 'Consulta -' (formato real do bot)", async () => {
+    const { extractPatientLabel } = await import("./units");
+    expect(extractPatientLabel("[CRD] Consulta - Maria Souza")).toBe("Maria Souza");
+    expect(extractPatientLabel("Consulta - Maria Souza")).toBe("Maria Souza");
+    expect(extractPatientLabel("consulta: João")).toBe("João");
+    expect(extractPatientLabel("[SF] Maria Souza")).toBe("Maria Souza");
+    expect(extractPatientLabel("Reunião interna")).toBe("Reunião interna");
+  });
+});
+
 describe("stripUnitPrefix", () => {
   it("remove o prefixo e espaços", () => {
     expect(stripUnitPrefix("[SF] João Pereira")).toBe("João Pereira");

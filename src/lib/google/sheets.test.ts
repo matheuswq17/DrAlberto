@@ -50,6 +50,33 @@ describe("normalizeHeader", () => {
   });
 });
 
+describe("rowsToLeads com os headers REAIS da planilha (confirmados 2026-07-04)", () => {
+  const REAL: string[][] = [
+    ["Data", "Nome", "Telefone", "Cidade", "Procedimento", "Convenio", "Tem Pedido", "Exames", "Previos", "Tipo Handoff", "Urgencia", "Status"],
+    ["2026-07-04 10:00", "Ana Lima", "(62) 98888-7777", "Goiânia", "Biópsia de tireoide", "Unimed", "sim", "US de tireoide", "não", "agendamento", "FALSE", "agendado"],
+    ["2026-07-04 11:00", "Bruno Reis", "62977776666", "Anápolis", "", "", "", "", "", "faq", "TRUE", ""],
+  ];
+
+  it("mapeia procedimento→motivo, exames→examePendente, tipo handoff→tipo", () => {
+    const [ana, bruno] = rowsToLeads(REAL);
+    expect(ana.motivo).toBe("Biópsia de tireoide");
+    expect(ana.examePendente).toBe("US de tireoide");
+    expect(ana.tipo).toBe("agendamento");
+    expect(ana.agendado).toBe(true);
+    expect(ana.urgencia).toBe(false);
+    expect(bruno.tipo).toBe("faq");
+    expect(bruno.urgencia).toBe(true);
+    expect(bruno.agendado).toBe(false);
+  });
+
+  it("colunas extras ficam acessíveis em raw", () => {
+    const [ana] = rowsToLeads(REAL);
+    expect(ana.raw["convenio"]).toBe("Unimed");
+    expect(ana.raw["tem pedido"]).toBe("sim");
+    expect(ana.raw["cidade"]).toBe("Goiânia");
+  });
+});
+
 describe("rowsToLeads", () => {
   it("mapeia colunas por apelido de header", () => {
     const leads = rowsToLeads(FIXTURE);

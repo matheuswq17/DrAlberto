@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { getGoogleAuth } from "./auth";
-import { parseUnitFromTitle, stripUnitPrefix, type UnitId } from "@/lib/units";
+import { extractPatientLabel, parseUnitFromTitle, type UnitId } from "@/lib/units";
 
 // LEITURA APENAS. Nenhuma função deste módulo escreve no Google Calendar —
 // regra inviolável até existir o mecanismo de trava de concorrência com o bot.
@@ -8,7 +8,7 @@ import { parseUnitFromTitle, stripUnitPrefix, type UnitId } from "@/lib/units";
 export interface CalendarEvent {
   id: string;
   title: string;
-  /** Título sem o prefixo de unidade — normalmente o nome do paciente. */
+  /** Nome do paciente: título sem prefixo de unidade e sem "Consulta -". */
   patientLabel: string;
   unit: UnitId | null;
   start: string; // ISO
@@ -47,7 +47,7 @@ export async function listEvents(
       events.push({
         id: item.id,
         title: item.summary ?? "",
-        patientLabel: stripUnitPrefix(item.summary),
+        patientLabel: extractPatientLabel(item.summary),
         unit: parseUnitFromTitle(item.summary),
         start,
         end,

@@ -2,9 +2,12 @@ import { google } from "googleapis";
 import { getGoogleAuth } from "./auth";
 
 // LEITURA APENAS da planilha de leads que o bot alimenta (Google Sheets).
-// A estrutura exata de colunas do Sheets real ainda não foi confirmada
-// (Marco 0). O mapeamento abaixo é por apelidos de cabeçalho normalizados —
-// quando os headers reais forem confirmados, basta ajustar HEADER_ALIASES.
+// Headers reais confirmados em 2026-07-04 (aba "Leads"):
+//   Data | Nome | Telefone | Cidade | Procedimento | Convenio | Tem Pedido |
+//   Exames | Previos | Tipo Handoff | Urgencia | Status
+// O mapeamento é por apelidos de cabeçalho normalizados; colunas extras ficam
+// acessíveis em `raw`. Não existe coluna de sintomas nem de pergunta de FAQ
+// hoje — esses campos ficam vazios até o bot passar a registrá-los.
 
 export interface Lead {
   name: string;
@@ -28,13 +31,13 @@ export interface Lead {
 const HEADER_ALIASES: Record<keyof Omit<Lead, "raw">, string[]> = {
   name: ["nome", "paciente", "nome do paciente", "nome_paciente"],
   phone: ["telefone", "fone", "whatsapp", "numero", "celular", "phone"],
-  motivo: ["motivo", "motivo da consulta", "motivo_consulta", "queixa"],
-  examePendente: ["exame pendente", "exame_pendente", "exames pendentes", "exame"],
+  motivo: ["motivo", "procedimento", "motivo da consulta", "motivo_consulta", "queixa"],
+  examePendente: ["exame pendente", "exame_pendente", "exames pendentes", "exames", "exame"],
   sintomas: ["sintomas", "sintomas-chave", "sintomas chave", "sintomas_chave"],
   urgencia: ["urgencia_dr", "urgencia", "urgente"],
-  tipo: ["tipo", "tipo de conversa", "tipo_conversa", "categoria", "intencao"],
+  tipo: ["tipo", "tipo handoff", "tipo de conversa", "tipo_conversa", "categoria", "intencao"],
   perguntaFaq: ["pergunta", "pergunta_faq", "faq", "pergunta faq"],
-  agendado: ["agendado", "agendou", "virou_agendamento", "status_agendamento", "status agendamento"],
+  agendado: ["agendado", "agendou", "virou_agendamento", "status_agendamento", "status agendamento", "status"],
   unidade: ["unidade", "local", "unidade_preferida"],
   createdAt: ["data", "timestamp", "criado em", "criado_em", "data/hora", "data_hora"],
 };
@@ -96,7 +99,7 @@ export function rowsToLeads(values: string[][]): Lead[] {
   });
 }
 
-export async function fetchLeads(): Promise<Lead[]> {
+export async function fetchLeadRows(): Promise<string[][]> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
   const tab = process.env.GOOGLE_SHEETS_LEADS_TAB ?? "Leads";
   if (!spreadsheetId) {
@@ -107,5 +110,9 @@ export async function fetchLeads(): Promise<Lead[]> {
     spreadsheetId,
     range: tab,
   });
-  return rowsToLeads((res.data.values ?? []) as string[][]);
+  return (res.data.values ?? []) as string[][];
+}
+
+export async function fetchLeads(): Promise<Lead[]> {
+  return rowsToLeads(await fetchLeadRows());
 }

@@ -4,7 +4,7 @@
 
 import "dotenv/config";
 import { listEvents } from "../src/lib/google/calendar";
-import { fetchLeads } from "../src/lib/google/sheets";
+import { fetchLeadRows, normalizeHeader, rowsToLeads } from "../src/lib/google/sheets";
 
 async function main() {
   const now = new Date();
@@ -23,16 +23,26 @@ async function main() {
 
   console.log("\n== Google Sheets (leads) ==");
   try {
-    const leads = await fetchLeads();
-    console.log(`${leads.length} linhas`);
-    const sample = leads.slice(-5);
-    for (const l of sample) {
+    const rows = await fetchLeadRows();
+    if (rows.length === 0) {
+      console.log("Planilha vazia (nem cabeçalho ainda).");
+      return;
+    }
+    console.log(
+      "Cabeçalho cru:",
+      rows[0].map((h) => JSON.stringify(h)).join(", ")
+    );
+    console.log(
+      "Cabeçalho normalizado:",
+      rows[0].map(normalizeHeader).join(" | ")
+    );
+
+    const leads = rowsToLeads(rows);
+    console.log(`${leads.length} linhas de dados`);
+    for (const l of leads.slice(-5)) {
       console.log(
         `  ${l.createdAt} | ${l.name} | ${l.phone} | tipo=${l.tipo} | urgencia=${l.urgencia} | agendado=${l.agendado}`
       );
-    }
-    if (leads.length > 0) {
-      console.log("\nHeaders detectados:", Object.keys(leads[0].raw).join(", "));
     }
   } catch (err) {
     console.error("Falhou:", (err as Error).message);
