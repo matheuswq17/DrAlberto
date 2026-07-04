@@ -1,0 +1,111 @@
+import { google } from "googleapis";
+import { getGoogleAuth } from "./auth";
+
+// LEITURA APENAS da planilha de leads que o bot alimenta (Google Sheets).
+// A estrutura exata de colunas do Sheets real ainda não foi confirmada
+// (Marco 0). O mapeamento abaixo é por apelidos de cabeçalho normalizados —
+// quando os headers reais forem confirmados, basta ajustar HEADER_ALIASES.
+
+export interface Lead {
+  name: string;
+  phone: string;
+  motivo: string;
+  examePendente: string;
+  sintomas: string;
+  urgencia: boolean;
+  /** tipo de conversa registrado pelo bot (ex.: faq, agendamento, saudacao) */
+  tipo: string;
+  /** pergunta de FAQ registrada, quando houver */
+  perguntaFaq: string;
+  /** true quando a conversa virou agendamento */
+  agendado: boolean;
+  unidade: string;
+  createdAt: string;
+  /** linha crua indexada pelo header normalizado, para agregações do funil */
+  raw: Record<string, string>;
+}
+
+const HEADER_ALIASES: Record<keyof Omit<Lead, "raw">, string[]> = {
+  name: ["nome", "paciente", "nome do paciente", "nome_paciente"],
+  phone: ["telefone", "fone", "whatsapp", "numero", "celular", "phone"],
+  motivo: ["motivo", "motivo da consulta", "motivo_consulta", "queixa"],
+  examePendente: ["exame pendente", "exame_pendente", "exames pendentes", "exame"],
+  sintomas: ["sintomas", "sintomas-chave", "sintomas chave", "sintomas_chave"],
+  urgencia: ["urgencia_dr", "urgencia", "urgente"],
+  tipo: ["tipo", "tipo de conversa", "tipo_conversa", "categoria", "intencao"],
+  perguntaFaq: ["pergunta", "pergunta_faq", "faq", "pergunta faq"],
+  agendado: ["agendado", "agendou", "virou_agendamento", "status_agendamento", "status agendamento"],
+  unidade: ["unidade", "local", "unidade_preferida"],
+  createdAt: ["data", "timestamp", "criado em", "criado_em", "data/hora", "data_hora"],
+};
+
+export function normalizeHeader(header: string): string {
+  return header
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function truthy(value: string): boolean {
+  const v = normalizeHeader(value);
+  return ["true", "sim", "1", "yes", "x", "verdadeiro"].includes(v) ||
+    v.includes("agendad") || v.includes("confirmad");
+}
+
+export function rowsToLeads(values: string[][]): Lead[] {
+  if (values.length < 2) return [];
+  const headers = values[0].map(normalizeHeader);
+
+  const indexOf = (field: keyof Omit<Lead, "raw">): number => {
+    for (const alias of HEADER_ALIASES[field]) {
+      const i = headers.indexOf(alias);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+
+  const idx = Object.fromEntries(
+    (Object.keys(HEADER_ALIASES) as Array<keyof Omit<Lead, "raw">>).map((f) => [
+      f,
+      indexOf(f),
+    ])
+  ) as Record<keyof Omit<Lead, "raw">, number>;
+
+  const cell = (row: string[], i: number) => (i >= 0 ? (row[i] ?? "").trim() : "");
+
+  return values.slice(1).map((row) => {
+    const raw: Record<string, string> = {};
+    headers.forEach((h, i) => {
+      raw[h] = (row[i] ?? "").trim();
+    });
+    return {
+      name: cell(row, idx.name),
+      phone: cell(row, idx.phone).replace(/\D/g, ""),
+      motivo: cell(row, idx.motivo),
+      examePendente: cell(row, idx.examePendente),
+      sintomas: cell(row, idx.sintomas),
+      urgencia: truthy(cell(row, idx.urgencia)),
+      tipo: normalizeHeader(cell(row, idx.tipo)),
+      perguntaFaq: cell(row, idx.perguntaFaq),
+      agendado: truthy(cell(row, idx.agendado)),
+      unidade: cell(row, idx.unidade),
+      createdAt: cell(row, idx.createdAt),
+      raw,
+    };
+  });
+}
+
+export async function fetchLeads(): Promise<Lead[]> {
+  const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+  const tab = process.env.GOOGLE_SHEETS_LEADS_TAB ?? "Leads";
+  if (!spreadsheetId) {
+    throw new Error("GOOGLE_SHEETS_ID não configurado — ver .env.example");
+  }
+  const sheets = google.sheets({ version: "v4", auth: getGoogleAuth() });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: tab,
+  });
+  return rowsToLeads((res.data.values ?? []) as string[][]);
+}
