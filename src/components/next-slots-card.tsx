@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getNextSlots } from "@/lib/next-slots";
+import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import {
   Card,
   CardContent,
@@ -39,9 +40,15 @@ export async function NextSlotsCard() {
             </div>
           ))}
         </div>
-        {result.warning && (
-          <p className="mt-3 text-xs text-amber-600">{result.warning}</p>
-        )}
+        <div className="mt-3 grid gap-2">
+          <SourceWarnings warnings={result.warnings} />
+          {result.ok && (
+            <ReadOkStamp
+              readAt={result.readAt}
+              label="Calculado com grade e calendário"
+            />
+          )}
+        </div>
       </>
     );
   } catch (err) {

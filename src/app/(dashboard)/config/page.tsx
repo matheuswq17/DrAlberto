@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { FormSelect } from "@/components/form-select";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
 import { addScheduleRow, deleteScheduleRow, saveSettings } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -114,33 +115,23 @@ export default async function ConfigPage() {
           >
             <div className="grid gap-1.5">
               <Label htmlFor="unit">Unidade</Label>
-              <select
+              <FormSelect
                 id="unit"
                 name="unit"
-                className="h-9 rounded-md border bg-transparent px-2 text-sm"
-                required
-              >
-                {ALL_UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {UNIT_LABELS[u]}
-                  </option>
-                ))}
-              </select>
+                options={ALL_UNITS.map((u) => ({
+                  value: u,
+                  label: UNIT_LABELS[u],
+                }))}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="weekday">Dia</Label>
-              <select
+              <FormSelect
                 id="weekday"
                 name="weekday"
-                className="h-9 rounded-md border bg-transparent px-2 text-sm"
-                required
-              >
-                {WEEKDAYS.map((d, i) => (
-                  <option key={d} value={i}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+                defaultValue="1"
+                options={WEEKDAYS.map((d, i) => ({ value: String(i), label: d }))}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="start_time">Início</Label>
@@ -190,15 +181,15 @@ export default async function ConfigPage() {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="report_period">Periodicidade</Label>
-              <select
+              <FormSelect
                 id="report_period"
                 name="report_period"
-                className="h-9 rounded-md border bg-transparent px-2 text-sm"
                 defaultValue={settings.report_period ?? "semanal"}
-              >
-                <option value="semanal">Semanal</option>
-                <option value="mensal">Mensal</option>
-              </select>
+                options={[
+                  { value: "semanal", label: "Semanal" },
+                  { value: "mensal", label: "Mensal" },
+                ]}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="followup_lead_days">

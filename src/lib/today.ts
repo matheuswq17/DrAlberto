@@ -11,6 +11,14 @@ export interface PatientCard {
   lead: Lead | null;
 }
 
+export interface SourceWarning {
+  /** 'config' = falta configurar (aviso âmbar com orientação); 'erro' = leitura falhou */
+  kind: "config" | "erro";
+  text: string;
+  /** link opcional para onde se configura (ex.: /config) */
+  href?: string;
+}
+
 export interface TodayAgenda {
   date: string; // ISO (dia local)
   byUnit: Array<{
@@ -18,7 +26,22 @@ export interface TodayAgenda {
     label: string;
     entries: PatientCard[];
   }>;
-  warnings: string[];
+  warnings: SourceWarning[];
+  /** hora (ISO) em que esta leitura foi feita — para o estado "leitura OK" */
+  readAt: string;
+  calendarOk: boolean;
+  sheetsOk: boolean;
+}
+
+export function isGoogleConfigured(): {
+  calendar: boolean;
+  sheets: boolean;
+} {
+  const sa = !!process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64;
+  return {
+    calendar: sa && !!process.env.GOOGLE_CALENDAR_ID,
+    sheets: sa && !!process.env.GOOGLE_SHEETS_ID,
+  };
 }
 
 export function normalizeName(name: string): string {
@@ -57,7 +80,10 @@ export function matchLead(patientLabel: string, leads: Lead[]): Lead | null {
 }
 
 export async function getTodayAgenda(now = new Date()): Promise<TodayAgenda> {
-  const warnings: string[] = [];
+  const warnings: SourceWarning[] = [];
+  const configured = isGoogleConfigured();
+  let calendarOk = false;
+  let sheetsOk = false;
 
   const dayStart = new Date(now);
   dayStart.setHours(0, 0, 0, 0);
@@ -65,19 +91,39 @@ export async function getTodayAgenda(now = new Date()): Promise<TodayAgenda> {
   dayEnd.setDate(dayEnd.getDate() + 1);
 
   let events: CalendarEvent[] = [];
-  try {
-    events = await listEvents(dayStart, dayEnd);
-  } catch (err) {
-    warnings.push(`Google Calendar indisponível: ${(err as Error).message}`);
+  if (!configured.calendar) {
+    warnings.push({
+      kind: "config",
+      text: "Google Calendar não configurado — preencha GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 e GOOGLE_CALENDAR_ID no .env.",
+    });
+  } else {
+    try {
+      events = await listEvents(dayStart, dayEnd);
+      calendarOk = true;
+    } catch (err) {
+      warnings.push({
+        kind: "erro",
+        text: `Leitura do Google Calendar falhou: ${(err as Error).message}`,
+      });
+    }
   }
 
   let leads: Lead[] = [];
-  try {
-    leads = await fetchLeads();
-  } catch (err) {
-    warnings.push(
-      `Google Sheets indisponível (fichas sem dados do bot): ${(err as Error).message}`
-    );
+  if (!configured.sheets) {
+    warnings.push({
+      kind: "config",
+      text: "Google Sheets não configurado (fichas sem dados do bot) — preencha GOOGLE_SHEETS_ID no .env.",
+    });
+  } else {
+    try {
+      leads = await fetchLeads();
+      sheetsOk = true;
+    } catch (err) {
+      warnings.push({
+        kind: "erro",
+        text: `Leitura do Google Sheets falhou (fichas sem dados do bot): ${(err as Error).message}`,
+      });
+    }
   }
 
   const entries: PatientCard[] = events
@@ -103,5 +149,8 @@ export async function getTodayAgenda(now = new Date()): Promise<TodayAgenda> {
     date: dayStart.toISOString(),
     byUnit,
     warnings,
+    readAt: new Date().toISOString(),
+    calendarOk,
+    sheetsOk,
   };
 }

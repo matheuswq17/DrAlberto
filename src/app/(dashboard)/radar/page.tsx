@@ -8,7 +8,8 @@ import {
   rejectSuggestion,
   removeFromWaitingList,
 } from "./actions";
-import { Badge } from "@/components/ui/badge";
+import { FormSelect } from "@/components/form-select";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -71,13 +72,13 @@ export default async function RadarPage() {
               <div>
                 <p className="text-sm font-medium">
                   {fmtSlot(slot.starts_at)} · {unitLabel(slot.unit)}
-                  <Badge className="ml-2" variant="secondary">
+                  <StatusBadge semantic="routine" className="ml-2">
                     {slot.reason}
-                  </Badge>
+                  </StatusBadge>
                   {slot.status === "sugerida" && (
-                    <Badge className="ml-1" variant="outline">
-                      oferta enviada
-                    </Badge>
+                    <StatusBadge semantic="warning" className="ml-1">
+                      oferta enviada — aguardando resposta
+                    </StatusBadge>
                   )}
                 </p>
                 {candidate ? (
@@ -149,18 +150,14 @@ export default async function RadarPage() {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="preferred_unit">Unidade preferida</Label>
-              <select
+              <FormSelect
                 id="preferred_unit"
                 name="preferred_unit"
-                className="h-9 rounded-md border bg-transparent px-2 text-sm"
-              >
-                <option value="">Qualquer</option>
-                {ALL_UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {UNIT_LABELS[u]}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "Qualquer" },
+                  ...ALL_UNITS.map((u) => ({ value: u, label: UNIT_LABELS[u] })),
+                ]}
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="notes">Observações</Label>
@@ -181,12 +178,20 @@ export default async function RadarPage() {
                   <div>
                     <p className="text-sm font-medium">
                       {w.patient_name}
-                      <Badge
+                      <StatusBadge
                         className="ml-2"
-                        variant={w.status === "aguardando" ? "secondary" : "outline"}
+                        semantic={
+                          w.status === "aguardando"
+                            ? "routine"
+                            : w.status === "contactado"
+                              ? "warning"
+                              : w.status === "agendado"
+                                ? "ok"
+                                : "routine"
+                        }
                       >
                         {w.status}
-                      </Badge>
+                      </StatusBadge>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {w.phone}

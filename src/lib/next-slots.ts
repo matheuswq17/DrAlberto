@@ -7,6 +7,7 @@ import {
   type Slot,
 } from "@/lib/availability";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
+import { isGoogleConfigured, type SourceWarning } from "@/lib/today";
 
 export interface NextSlotsResult {
   units: Array<{
@@ -14,8 +15,10 @@ export interface NextSlotsResult {
     label: string;
     next: Slot | null;
   }>;
-  /** aviso não-fatal (ex.: Calendar sem credencial, grade vazia) */
-  warning?: string;
+  warnings: SourceWarning[];
+  readAt: string;
+  /** true quando grade e calendário foram lidos com sucesso */
+  ok: boolean;
 }
 
 export async function getNextSlots(
@@ -27,6 +30,9 @@ export async function getNextSlots(
   if (error) throw new Error(`unit_schedules: ${error.message}`);
 
   const schedules = (scheduleRows ?? []) as ScheduleRow[];
+  const warnings: SourceWarning[] = [];
+  let ok = true;
+
   if (schedules.length === 0) {
     return {
       units: ALL_UNITS.map((unit) => ({
@@ -34,8 +40,15 @@ export async function getNextSlots(
         label: UNIT_LABELS[unit],
         next: null,
       })),
-      warning:
-        "Nenhuma grade de atendimento cadastrada — configure em Config.",
+      warnings: [
+        {
+          kind: "config",
+          text: "Nenhuma grade de atendimento cadastrada — sem ela não há como calcular horários livres.",
+          href: "/config",
+        },
+      ],
+      readAt: new Date().toISOString(),
+      ok: false,
     };
   }
 
@@ -43,14 +56,25 @@ export async function getNextSlots(
   const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   let busy: BusyInterval[] = [];
-  let warning: string | undefined;
-  try {
-    const events = await listEvents(now, horizon);
-    busy = events
-      .filter((e) => !e.allDay)
-      .map((e) => ({ start: new Date(e.start), end: new Date(e.end) }));
-  } catch (err) {
-    warning = `Google Calendar indisponível (${(err as Error).message}) — mostrando a grade sem descontar eventos.`;
+  if (!isGoogleConfigured().calendar) {
+    ok = false;
+    warnings.push({
+      kind: "config",
+      text: "Google Calendar não configurado — mostrando a grade sem descontar eventos.",
+    });
+  } else {
+    try {
+      const events = await listEvents(now, horizon);
+      busy = events
+        .filter((e) => !e.allDay)
+        .map((e) => ({ start: new Date(e.start), end: new Date(e.end) }));
+    } catch (err) {
+      ok = false;
+      warnings.push({
+        kind: "erro",
+        text: `Leitura do Google Calendar falhou (${(err as Error).message}) — mostrando a grade sem descontar eventos.`,
+      });
+    }
   }
 
   const perUnit = nextFreeSlotPerUnit(schedules, busy, now);
@@ -60,6 +84,8 @@ export async function getNextSlots(
       label: UNIT_LABELS[unit],
       next: perUnit[unit],
     })),
-    warning,
+    warnings,
+    readAt: new Date().toISOString(),
+    ok,
   };
 }

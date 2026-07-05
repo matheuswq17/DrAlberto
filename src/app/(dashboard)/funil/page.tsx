@@ -1,5 +1,7 @@
 import { fetchLeads } from "@/lib/google/sheets";
 import { computeFunnel, type FunnelMetrics } from "@/lib/metrics";
+import { isGoogleConfigured, type SourceWarning } from "@/lib/today";
+import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import {
   Card,
   CardContent,
@@ -20,12 +22,23 @@ export const dynamic = "force-dynamic";
 
 export default async function FunilPage() {
   let metrics: FunnelMetrics | null = null;
-  let warning: string | null = null;
-  try {
-    metrics = computeFunnel(await fetchLeads());
-  } catch (err) {
-    warning = `Google Sheets indisponível: ${(err as Error).message}`;
+  const warnings: SourceWarning[] = [];
+  if (!isGoogleConfigured().sheets) {
+    warnings.push({
+      kind: "config",
+      text: "Google Sheets não configurado — preencha GOOGLE_SHEETS_ID no .env.",
+    });
+  } else {
+    try {
+      metrics = computeFunnel(await fetchLeads());
+    } catch (err) {
+      warnings.push({
+        kind: "erro",
+        text: `Leitura do Google Sheets falhou: ${(err as Error).message}`,
+      });
+    }
   }
+  const readAt = new Date().toISOString();
 
   return (
     <div className="grid gap-6">
@@ -37,13 +50,20 @@ export default async function FunilPage() {
         </p>
       </div>
 
-      {warning && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {warning}
-        </p>
+      <SourceWarnings warnings={warnings} />
+
+      {metrics && metrics.totalLeads === 0 && (
+        <Card>
+          <CardContent className="grid gap-2 py-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Nenhuma conversa registrada pelo bot ainda.
+            </p>
+            <ReadOkStamp readAt={readAt} label="Leitura da planilha OK" />
+          </CardContent>
+        </Card>
       )}
 
-      {metrics && (
+      {metrics && metrics.totalLeads > 0 && (
         <>
           <div className="grid gap-3 sm:grid-cols-4">
             <Card>
@@ -95,6 +115,7 @@ export default async function FunilPage() {
               </CardContent>
             </Card>
           </div>
+          <ReadOkStamp readAt={readAt} label="Leitura da planilha OK" />
         </>
       )}
     </div>

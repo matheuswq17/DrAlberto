@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchLeads, type Lead } from "@/lib/google/sheets";
+import { isGoogleConfigured, type SourceWarning } from "@/lib/today";
 
 // Painel de urgência silenciosa (func. 2). PULL APENAS: este módulo (e a tela
 // que o usa) somente LÊ e marca estado de revisão. Em hipótese alguma dispara
@@ -19,15 +20,30 @@ export function urgencyKey(lead: Lead): string {
   return `${lead.phone}|${lead.createdAt}`;
 }
 
-export async function getUrgencies(
-  supabase: SupabaseClient
-): Promise<{ items: UrgencyItem[]; warnings: string[] }> {
-  const warnings: string[] = [];
+export async function getUrgencies(supabase: SupabaseClient): Promise<{
+  items: UrgencyItem[];
+  warnings: SourceWarning[];
+  readAt: string;
+  sheetsOk: boolean;
+}> {
+  const warnings: SourceWarning[] = [];
+  let sheetsOk = false;
   let leads: Lead[] = [];
-  try {
-    leads = await fetchLeads();
-  } catch (err) {
-    warnings.push(`Google Sheets indisponível: ${(err as Error).message}`);
+  if (!isGoogleConfigured().sheets) {
+    warnings.push({
+      kind: "config",
+      text: "Google Sheets não configurado — preencha GOOGLE_SHEETS_ID no .env para ver as triagens do bot.",
+    });
+  } else {
+    try {
+      leads = await fetchLeads();
+      sheetsOk = true;
+    } catch (err) {
+      warnings.push({
+        kind: "erro",
+        text: `Leitura do Google Sheets falhou: ${(err as Error).message}`,
+      });
+    }
   }
 
   const urgent = leads.filter((l) => l.urgencia);
@@ -35,7 +51,9 @@ export async function getUrgencies(
   const { data: reviews, error } = await supabase
     .from("urgency_reviews")
     .select("sheet_row_key, status, reviewed_at");
-  if (error) warnings.push(`urgency_reviews: ${error.message}`);
+  if (error) {
+    warnings.push({ kind: "erro", text: `urgency_reviews: ${error.message}` });
+  }
 
   const reviewByKey = new Map(
     (reviews ?? []).map((r) => [r.sheet_row_key, r])
@@ -61,5 +79,5 @@ export async function getUrgencies(
       return order[a.status] - order[b.status];
     });
 
-  return { items, warnings };
+  return { items, warnings, readAt: new Date().toISOString(), sheetsOk };
 }

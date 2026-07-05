@@ -52,3 +52,6 @@ next-env.d.ts
 
 # rascunhos de prompt com credenciais — nunca versionar
 PROMPT_*.md
+
+# screenshots locais de verificação
+screenshots/

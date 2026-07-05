@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { addFollowUp, setFollowUpStatus } from "./actions";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge, type StatusSemantic } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,12 +22,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const STATUS_LABEL: Record<string, string> = {
-  pendente: "Pendente",
-  lembrete_enviado: "Lembrete enviado",
-  agendado: "Agendado",
-  concluido: "Concluído",
-  cancelado: "Cancelado",
+const STATUS_META: Record<string, { label: string; semantic: StatusSemantic }> = {
+  pendente: { label: "Pendente", semantic: "routine" },
+  lembrete_enviado: { label: "Lembrete enviado", semantic: "warning" },
+  agendado: { label: "Agendado", semantic: "ok" },
+  concluido: { label: "Concluído", semantic: "ok" },
+  cancelado: { label: "Cancelado", semantic: "routine" },
 };
 
 function fmtDate(d: string | null): string {
@@ -171,17 +171,9 @@ function FollowUpTable({ rows }: { rows: Row[] }) {
             <TableCell>{fmtDate(r.procedure_date)}</TableCell>
             <TableCell>{fmtDate(r.due_date)}</TableCell>
             <TableCell>
-              <Badge
-                variant={
-                  r.status === "pendente"
-                    ? "secondary"
-                    : r.status === "lembrete_enviado"
-                      ? "default"
-                      : "outline"
-                }
-              >
-                {STATUS_LABEL[r.status] ?? r.status}
-              </Badge>
+              <StatusBadge semantic={STATUS_META[r.status]?.semantic ?? "routine"}>
+                {STATUS_META[r.status]?.label ?? r.status}
+              </StatusBadge>
             </TableCell>
             <TableCell>
               <div className="flex justify-end gap-1">

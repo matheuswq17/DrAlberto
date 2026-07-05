@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,6 +46,18 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Paleta SEMÂNTICA de status — uso restrito a badges e bordas de status:
+     vermelho = urgência real, âmbar = atenção, verde = confirmado,
+     cinza = rotina. Nunca usar para mensagens genéricas do sistema. */
+  --color-status-urgent: var(--status-urgent);
+  --color-status-urgent-foreground: var(--status-urgent-foreground);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-ok: var(--status-ok);
+  --color-status-ok-foreground: var(--status-ok-foreground);
+  --color-status-routine: var(--status-routine);
+  --color-status-routine-foreground: var(--status-routine-foreground);
 }
 
 :root {
@@ -55,7 +67,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* Cor de MARCA — elementos estruturais (navegação, botão primário) */
+  --primary: oklch(0.42 0.1 252);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -81,6 +94,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Paleta semântica de status (claro) */
+  --status-urgent: oklch(0.55 0.2 26);
+  --status-urgent-foreground: oklch(0.44 0.17 26);
+  --status-warning: oklch(0.72 0.14 70);
+  --status-warning-foreground: oklch(0.47 0.1 60);
+  --status-ok: oklch(0.55 0.14 150);
+  --status-ok-foreground: oklch(0.42 0.11 150);
+  --status-routine: oklch(0.6 0 0);
+  --status-routine-foreground: oklch(0.42 0 0);
 }
 
 .dark {
@@ -90,8 +113,9 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Cor de MARCA (escuro) */
+  --primary: oklch(0.72 0.12 252);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -115,16 +139,25 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Paleta semântica de status (escuro) */
+  --status-urgent: oklch(0.65 0.19 26);
+  --status-urgent-foreground: oklch(0.78 0.14 26);
+  --status-warning: oklch(0.75 0.13 70);
+  --status-warning-foreground: oklch(0.85 0.1 75);
+  --status-ok: oklch(0.65 0.13 150);
+  --status-ok-foreground: oklch(0.8 0.1 150);
+  --status-routine: oklch(0.6 0 0);
+  --status-routine-foreground: oklch(0.75 0 0);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  /* font-sans precisa ser aplicada no body: a variável --font-geist-sans é
+     definida pelo next/font no <body>, não no <html>. */
   body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
+    @apply bg-background text-foreground font-sans;
   }
 }
