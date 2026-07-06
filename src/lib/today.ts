@@ -12,11 +12,25 @@ export interface PatientCard {
 }
 
 export interface SourceWarning {
-  /** 'config' = falta configurar (aviso âmbar com orientação); 'erro' = leitura falhou */
-  kind: "config" | "erro";
+  /** 'config' = falta configurar; 'erro' = leitura falhou; 'dados' = dado suspeito na fonte */
+  kind: "config" | "erro" | "dados";
   text: string;
   /** link opcional para onde se configura (ex.: /config) */
   href?: string;
+}
+
+/** Aviso padrão para linhas desalinhadas da planilha, ou null se não houver. */
+export function suspectRowsWarning(
+  suspects: Array<{ sheetRow: number; name: string }>
+): SourceWarning | null {
+  if (suspects.length === 0) return null;
+  const detalhe = suspects
+    .map((s) => `linha ${s.sheetRow}${s.name ? ` (${s.name})` : ""}`)
+    .join(", ");
+  return {
+    kind: "dados",
+    text: `${detalhe} da planilha parece desalinhada — menos colunas que o cabeçalho e valor true/false na coluna Tipo Handoff. Essas conversas podem estar sendo contadas errado; confira a aba Leads.`,
+  };
 }
 
 export interface TodayAgenda {

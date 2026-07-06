@@ -1,6 +1,10 @@
-import { fetchLeads } from "@/lib/google/sheets";
+import { fetchLeadsWithQuality } from "@/lib/google/sheets";
 import { computeFunnel, type FunnelMetrics } from "@/lib/metrics";
-import { isGoogleConfigured, type SourceWarning } from "@/lib/today";
+import {
+  isGoogleConfigured,
+  suspectRowsWarning,
+  type SourceWarning,
+} from "@/lib/today";
 import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import {
   Card,
@@ -30,7 +34,10 @@ export default async function FunilPage() {
     });
   } else {
     try {
-      metrics = computeFunnel(await fetchLeads());
+      const { leads, suspects } = await fetchLeadsWithQuality();
+      metrics = computeFunnel(leads);
+      const suspect = suspectRowsWarning(suspects);
+      if (suspect) warnings.push(suspect);
     } catch (err) {
       warnings.push({
         kind: "erro",

@@ -99,6 +99,50 @@ export function rowsToLeads(values: string[][]): Lead[] {
   });
 }
 
+export interface SuspectRow {
+  /** número da linha na planilha (1-based, contando o cabeçalho) */
+  sheetRow: number;
+  name: string;
+}
+
+/**
+ * Detecta linhas provavelmente desalinhadas (coladas à mão pulando coluna):
+ * a linha tem menos células que o cabeçalho E um valor booleano (true/false)
+ * caiu na coluna de Tipo Handoff — assinatura do deslocamento à esquerda.
+ */
+export function findSuspectRows(values: string[][]): SuspectRow[] {
+  if (values.length < 2) return [];
+  const headers = values[0].map(normalizeHeader);
+  const tipoIdx = HEADER_ALIASES.tipo
+    .map((a) => headers.indexOf(a))
+    .find((i) => i !== -1);
+  const nameIdx = HEADER_ALIASES.name
+    .map((a) => headers.indexOf(a))
+    .find((i) => i !== -1);
+  if (tipoIdx === undefined) return [];
+
+  const suspects: SuspectRow[] = [];
+  values.slice(1).forEach((row, i) => {
+    if (row.length >= headers.length) return;
+    const tipo = normalizeHeader(row[tipoIdx] ?? "");
+    if (tipo === "true" || tipo === "false") {
+      suspects.push({
+        sheetRow: i + 2,
+        name: nameIdx !== undefined ? (row[nameIdx] ?? "").trim() : "",
+      });
+    }
+  });
+  return suspects;
+}
+
+export async function fetchLeadsWithQuality(): Promise<{
+  leads: Lead[];
+  suspects: SuspectRow[];
+}> {
+  const rows = await fetchLeadRows();
+  return { leads: rowsToLeads(rows), suspects: findSuspectRows(rows) };
+}
+
 export async function fetchLeadRows(): Promise<string[][]> {
   const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
   const tab = process.env.GOOGLE_SHEETS_LEADS_TAB ?? "Leads";

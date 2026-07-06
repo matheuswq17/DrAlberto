@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHeader, rowsToLeads } from "./sheets";
+import { findSuspectRows, normalizeHeader, rowsToLeads } from "./sheets";
 
 const FIXTURE: string[][] = [
   [
@@ -74,6 +74,36 @@ describe("rowsToLeads com os headers REAIS da planilha (confirmados 2026-07-04)"
     expect(ana.raw["convenio"]).toBe("Unimed");
     expect(ana.raw["tem pedido"]).toBe("sim");
     expect(ana.raw["cidade"]).toBe("Goiânia");
+  });
+});
+
+describe("findSuspectRows (linha colada à mão pulando coluna)", () => {
+  const HEADER = ["Data", "Nome", "Telefone", "Cidade", "Procedimento", "Convenio", "Tem Pedido", "Exames", "Previos", "Tipo Handoff", "Urgencia", "Status"];
+  // caso real de 2026-07-05: linha com 10 células, "faq" caiu em Previos e
+  // "FALSE" em Tipo Handoff (deslocada 1 coluna à esquerda)
+  const MISALIGNED = ["2026-07-05 09:40", "João Pereira (EXEMPLO)", "62988882222", "Anápolis", "", "", "", "", "faq", "FALSE"];
+  const ALIGNED_SHORT = ["2026-07-05 09:40", "João Pereira", "62988882222", "Anápolis", "", "", "", "", "", "faq", "FALSE"];
+  const ALIGNED_FULL = ["2026-07-05 10:20", "Ana Lima", "62977773333", "Goiânia", "Biópsia", "", "sim", "US", "", "faq", "FALSE", "agendado"];
+
+  it("detecta a assinatura do deslocamento (menos células + booleano em Tipo Handoff)", () => {
+    const suspects = findSuspectRows([HEADER, MISALIGNED]);
+    expect(suspects).toEqual([
+      { sheetRow: 2, name: "João Pereira (EXEMPLO)" },
+    ]);
+  });
+
+  it("não acusa linha curta porém alinhada, nem linha completa", () => {
+    expect(findSuspectRows([HEADER, ALIGNED_SHORT, ALIGNED_FULL])).toEqual([]);
+  });
+
+  it("numera pela posição real na planilha", () => {
+    const suspects = findSuspectRows([HEADER, ALIGNED_FULL, MISALIGNED]);
+    expect(suspects[0].sheetRow).toBe(3);
+  });
+
+  it("planilha vazia ou só cabeçalho não acusa nada", () => {
+    expect(findSuspectRows([])).toEqual([]);
+    expect(findSuspectRows([HEADER])).toEqual([]);
   });
 });
 

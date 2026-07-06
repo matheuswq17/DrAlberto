@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchLeads, type Lead } from "@/lib/google/sheets";
-import { isGoogleConfigured, type SourceWarning } from "@/lib/today";
+import { fetchLeadsWithQuality, type Lead } from "@/lib/google/sheets";
+import {
+  isGoogleConfigured,
+  suspectRowsWarning,
+  type SourceWarning,
+} from "@/lib/today";
 
 // Painel de urgência silenciosa (func. 2). PULL APENAS: este módulo (e a tela
 // que o usa) somente LÊ e marca estado de revisão. Em hipótese alguma dispara
@@ -36,8 +40,11 @@ export async function getUrgencies(supabase: SupabaseClient): Promise<{
     });
   } else {
     try {
-      leads = await fetchLeads();
+      const result = await fetchLeadsWithQuality();
+      leads = result.leads;
       sheetsOk = true;
+      const suspect = suspectRowsWarning(result.suspects);
+      if (suspect) warnings.push(suspect);
     } catch (err) {
       warnings.push({
         kind: "erro",

@@ -15,7 +15,11 @@ export function SourceWarnings({ warnings }: { warnings: SourceWarning[] }) {
           className="rounded-md border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-xs text-status-warning-foreground"
         >
           <span className="font-medium">
-            {w.kind === "config" ? "Falta configurar: " : "Falha de leitura: "}
+            {w.kind === "config"
+              ? "Falta configurar: "
+              : w.kind === "dados"
+                ? "Dado suspeito: "
+                : "Falha de leitura: "}
           </span>
           {w.text}
           {w.href && (
