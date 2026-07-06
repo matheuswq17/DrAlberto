@@ -168,6 +168,9 @@ export default async function ConfigPage() {
         <CardContent>
           <form
             action={saveSettings}
+            // inputs são uncontrolled: a key remonta o form quando os valores
+            // salvos mudam, em vez de trocar defaultValue de um campo vivo
+            key={`${settings.report_phone ?? ""}|${settings.report_period ?? ""}|${settings.followup_lead_days ?? ""}`}
             className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-3"
           >
             <div className="grid gap-1.5">
