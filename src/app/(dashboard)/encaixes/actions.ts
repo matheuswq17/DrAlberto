@@ -28,7 +28,7 @@ export async function addToWaitingList(formData: FormData) {
     created_by: user.id,
   });
   if (error) throw new Error(error.message);
-  revalidatePath("/radar");
+  revalidatePath("/encaixes");
 }
 
 export async function removeFromWaitingList(formData: FormData) {
@@ -38,7 +38,7 @@ export async function removeFromWaitingList(formData: FormData) {
     .update({ status: "removido" })
     .eq("id", String(formData.get("id")));
   if (error) throw new Error(error.message);
-  revalidatePath("/radar");
+  revalidatePath("/encaixes");
 }
 
 /** Aprovar = envia a oferta por WhatsApp. O site NÃO escreve no Calendar. */
@@ -84,7 +84,7 @@ export async function approveSuggestion(formData: FormData) {
       .update({ status: "contactado" })
       .eq("id", p.id),
   ]);
-  revalidatePath("/radar");
+  revalidatePath("/encaixes");
 }
 
 /** Rejeitar candidato = registra a rejeição; o próximo da fila é sugerido. */
@@ -98,7 +98,7 @@ export async function rejectSuggestion(formData: FormData) {
     decided_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
-  revalidatePath("/radar");
+  revalidatePath("/encaixes");
 }
 
 export async function ignoreSlot(formData: FormData) {
@@ -108,5 +108,5 @@ export async function ignoreSlot(formData: FormData) {
     .update({ status: "ignorada" })
     .eq("id", String(formData.get("slot_id")));
   if (error) throw new Error(error.message);
-  revalidatePath("/radar");
+  revalidatePath("/encaixes");
 }

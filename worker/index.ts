@@ -4,13 +4,15 @@
 // Jobs:
 //   - Lembretes de retorno (func. 4): diário às 08:00
 //   - Relatório periódico (func. 7): segunda 07:00 (semanal) ou dia 1 (mensal)
+//   - Resumo do dia: diário 07:00, só se daily_summary_enabled=true em /config
 //   - Radar de vagas liberadas (func. 3): a cada 15 minutos
 //
-// Execução manual (verificação): tsx worker/index.ts --run <followups|report|radar>
+// Execução manual (verificação): tsx worker/index.ts --run <followups|report|radar|briefing>
 
 import "dotenv/config";
 import cron from "node-cron";
 import { createAdminClient } from "../src/lib/supabase/admin";
+import { runDailyBriefing } from "../src/lib/jobs/daily-briefing";
 import { runFollowUpReminders } from "../src/lib/jobs/followup-reminders";
 import { runPeriodicReport } from "../src/lib/jobs/periodic-report";
 import { runRadar } from "../src/lib/jobs/radar";
@@ -46,6 +48,14 @@ async function reportIfPeriod(period: "semanal" | "mensal") {
   await report();
 }
 
+async function briefing() {
+  const supabase = createAdminClient();
+  const result = await runDailyBriefing(supabase);
+  console.log(
+    `[briefing] ${new Date().toISOString()} enviado=${result.sent}${result.reason ? ` (${result.reason})` : ""}`
+  );
+}
+
 async function radar() {
   const supabase = createAdminClient();
   const result = await runRadar(supabase);
@@ -58,6 +68,7 @@ const MANUAL_JOBS: Record<string, () => Promise<void>> = {
   followups,
   report,
   radar,
+  briefing,
 };
 
 async function main() {
@@ -87,6 +98,12 @@ async function main() {
     timezone: TZ,
   });
   cron.schedule("0 7 1 * *", () => reportIfPeriod("mensal").catch(console.error), {
+    timezone: TZ,
+  });
+  console.log(
+    "  - resumo do dia: diário 07:00 (se daily_summary_enabled=true)"
+  );
+  cron.schedule("0 7 * * *", () => briefing().catch(console.error), {
     timezone: TZ,
   });
   console.log("  - radar de vagas: a cada 15 minutos");

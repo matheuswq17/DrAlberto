@@ -37,11 +37,34 @@ export async function deleteScheduleRow(formData: FormData) {
 
 export async function saveSettings(formData: FormData) {
   const { supabase, user } = await authedClient();
-  const entries: Array<[string, string]> = [
-    ["report_phone", String(formData.get("report_phone") ?? "").replace(/\D/g, "")],
-    ["report_period", String(formData.get("report_period") ?? "semanal")],
-    ["followup_lead_days", String(Number(formData.get("followup_lead_days") || 3))],
-  ];
+  // Cada bloco da Config tem seu próprio form; só grava as chaves presentes
+  // no form enviado, para um bloco não sobrescrever os valores do outro.
+  const entries: Array<[string, string]> = [];
+  if (formData.has("report_phone")) {
+    entries.push([
+      "report_phone",
+      String(formData.get("report_phone") ?? "").replace(/\D/g, ""),
+    ]);
+  }
+  if (formData.has("report_period")) {
+    entries.push([
+      "report_period",
+      String(formData.get("report_period") ?? "semanal"),
+    ]);
+  }
+  if (formData.has("followup_lead_days")) {
+    entries.push([
+      "followup_lead_days",
+      String(Number(formData.get("followup_lead_days") || 3)),
+    ]);
+  }
+  if (formData.has("daily_summary_enabled")) {
+    entries.push([
+      "daily_summary_enabled",
+      formData.get("daily_summary_enabled") === "true" ? "true" : "false",
+    ]);
+  }
+  if (entries.length === 0) return;
   const { error } = await supabase.from("app_settings").upsert(
     entries.map(([key, value]) => ({
       key,

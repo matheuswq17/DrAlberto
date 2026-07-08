@@ -38,7 +38,7 @@ function unitLabel(unit: string | null): string {
   return unit ? (UNIT_LABELS[unit as UnitId] ?? unit) : "sem unidade";
 }
 
-export default async function RadarPage() {
+export default async function EncaixesPage() {
   const supabase = await createClient();
   const { openSlots, waiting, sentSuggestions } = await getRadarData(supabase);
   const queue = waiting.filter((w) => w.status === "aguardando");
@@ -46,7 +46,7 @@ export default async function RadarPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-xl font-semibold">Radar de vagas</h1>
+        <h1 className="text-xl font-semibold">Encaixes</h1>
         <p className="text-sm text-muted-foreground">
           Cancelamentos detectados na agenda (checagem a cada 15 min). Aprovar
           envia a oferta por WhatsApp — o agendamento acontece pelo bot quando

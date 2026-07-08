@@ -5,15 +5,15 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/", label: "Hoje" },
+  { href: "/", label: "Agenda" },
   { href: "/urgencias", label: "Urgências" },
-  { href: "/radar", label: "Radar" },
+  { href: "/encaixes", label: "Encaixes" },
   { href: "/retornos", label: "Retornos" },
   { href: "/funil", label: "Funil" },
   { href: "/config", label: "Config" },
 ];
 
-export function NavLinks() {
+export function NavLinks({ urgencyCount = 0 }: { urgencyCount?: number }) {
   const pathname = usePathname();
   return (
     <nav className="flex items-center gap-1">
@@ -35,6 +35,14 @@ export function NavLinks() {
             )}
           >
             {item.label}
+            {item.href === "/urgencias" && urgencyCount > 0 && (
+              <span
+                className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-status-urgent px-1 text-[10px] font-semibold text-white"
+                aria-label={`${urgencyCount} urgência${urgencyCount > 1 ? "s" : ""} sem revisão`}
+              >
+                {urgencyCount}
+              </span>
+            )}
           </Link>
         );
       })}

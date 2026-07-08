@@ -58,6 +58,13 @@
   --color-status-ok-foreground: var(--status-ok-foreground);
   --color-status-routine: var(--status-routine);
   --color-status-routine-foreground: var(--status-routine-foreground);
+
+  /* Paleta CATEGÓRICA por hospital — identidade, não estado. Cada unidade tem
+     uma cor fixa, a mesma em todas as telas. Trio validado para daltonismo
+     (ΔE ≥ 12 nos dois modos) e distinto da paleta semântica de status. */
+  --color-unit-crd: var(--unit-crd);
+  --color-unit-sfa: var(--unit-sfa);
+  --color-unit-einstein: var(--unit-einstein);
 }
 
 :root {
@@ -104,6 +111,11 @@
   --status-ok-foreground: oklch(0.42 0.11 150);
   --status-routine: oklch(0.6 0 0);
   --status-routine-foreground: oklch(0.42 0 0);
+
+  /* Cores por hospital (claro) */
+  --unit-crd: #2a78d6;
+  --unit-sfa: #4a3aa7;
+  --unit-einstein: #eb6834;
 }
 
 .dark {
@@ -149,6 +161,11 @@
   --status-ok-foreground: oklch(0.8 0.1 150);
   --status-routine: oklch(0.6 0 0);
   --status-routine-foreground: oklch(0.75 0 0);
+
+  /* Cores por hospital (escuro) — mesmos matizes, passos para superfície escura */
+  --unit-crd: #2d6cc4;
+  --unit-sfa: #9085e9;
+  --unit-einstein: #d95926;
 }
 
 @layer base {

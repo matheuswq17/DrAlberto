@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { FormSelect } from "@/components/form-select";
+import { InfoTip } from "@/components/info-tip";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
 import { addScheduleRow, deleteScheduleRow, saveSettings } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,8 @@ export default async function ConfigPage() {
     (settingsRows ?? []).map((r) => [r.key, r.value])
   );
 
+  const period = settings.report_period === "mensal" ? "mensal" : "semanal";
+
   return (
     <div className="grid gap-6">
       <h1 className="text-xl font-semibold">Configurações</h1>
@@ -77,7 +80,7 @@ export default async function ConfigPage() {
                 <TableHead>Dia</TableHead>
                 <TableHead>Início</TableHead>
                 <TableHead>Fim</TableHead>
-                <TableHead>Slot (min)</TableHead>
+                <TableHead>Duração (min)</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -142,7 +145,7 @@ export default async function ConfigPage() {
               <Input id="end_time" name="end_time" type="time" required />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="slot_minutes">Slot (min)</Label>
+              <Label htmlFor="slot_minutes">Duração da consulta (min)</Label>
               <Input
                 id="slot_minutes"
                 name="slot_minutes"
@@ -151,6 +154,9 @@ export default async function ConfigPage() {
                 step={5}
                 defaultValue={30}
               />
+              <p className="text-xs text-muted-foreground">
+                Tempo reservado para cada paciente.
+              </p>
             </div>
             <Button type="submit">Adicionar</Button>
           </form>
@@ -159,10 +165,21 @@ export default async function ConfigPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Relatório periódico e lembretes</CardTitle>
+          <CardTitle className="flex items-center gap-1.5">
+            {period === "mensal"
+              ? "Resumo mensal por WhatsApp"
+              : "Resumo semanal por WhatsApp"}
+            <InfoTip>
+              O resumo sai só no horário programado (segunda-feira de manhã, ou
+              dia 1º no mensal) — nada é enviado na hora em que as coisas
+              acontecem. Enquanto o sistema está em modo de teste, toda mensagem
+              vai para o número de teste, não para o número cadastrado aqui.
+            </InfoTip>
+          </CardTitle>
           <CardDescription>
-            O relatório é enviado por agendamento (nunca por evento). Em safe
-            mode, todo WhatsApp vai para o número de teste.
+            {period === "mensal"
+              ? "Você recebe um resumo do mês todo dia 1º de manhã."
+              : "Você recebe um resumo da semana toda segunda-feira de manhã."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -170,11 +187,11 @@ export default async function ConfigPage() {
             action={saveSettings}
             // inputs são uncontrolled: a key remonta o form quando os valores
             // salvos mudam, em vez de trocar defaultValue de um campo vivo
-            key={`${settings.report_phone ?? ""}|${settings.report_period ?? ""}|${settings.followup_lead_days ?? ""}`}
-            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-3"
+            key={`${settings.report_phone ?? ""}|${settings.report_period ?? ""}`}
+            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2"
           >
             <div className="grid gap-1.5">
-              <Label htmlFor="report_phone">WhatsApp do relatório</Label>
+              <Label htmlFor="report_phone">WhatsApp que recebe o resumo</Label>
               <Input
                 id="report_phone"
                 name="report_phone"
@@ -183,20 +200,41 @@ export default async function ConfigPage() {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="report_period">Periodicidade</Label>
+              <Label htmlFor="report_period">Frequência</Label>
               <FormSelect
                 id="report_period"
                 name="report_period"
                 defaultValue={settings.report_period ?? "semanal"}
                 options={[
-                  { value: "semanal", label: "Semanal" },
-                  { value: "mensal", label: "Mensal" },
+                  { value: "semanal", label: "Toda semana" },
+                  { value: "mensal", label: "Todo mês" },
                 ]}
               />
             </div>
+            <div className="sm:col-span-2">
+              <Button type="submit">Salvar</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lembrete automático de retorno</CardTitle>
+          <CardDescription>
+            O paciente é avisado automaticamente quando está perto da data de
+            retorno.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            action={saveSettings}
+            key={`fu-${settings.followup_lead_days ?? ""}`}
+            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2"
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="followup_lead_days">
-                Antecedência lembrete (dias)
+                Avisar com quantos dias de antecedência
               </Label>
               <Input
                 id="followup_lead_days"
@@ -206,7 +244,47 @@ export default async function ConfigPage() {
                 defaultValue={settings.followup_lead_days ?? "3"}
               />
             </div>
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-2">
+              <Button type="submit">Salvar</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-1.5">
+            Resumo do dia por WhatsApp
+            <InfoTip>
+              Enviado todo dia às 7h da manhã, só quando estiver ativado, para o
+              mesmo WhatsApp do resumo acima. Em modo de teste, vai para o
+              número de teste.
+            </InfoTip>
+          </CardTitle>
+          <CardDescription>
+            Toda manhã, o essencial do dia: consultas, urgências pendentes e
+            encaixes em aberto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            action={saveSettings}
+            key={`ds-${settings.daily_summary_enabled ?? ""}`}
+            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2"
+          >
+            <div className="grid gap-1.5">
+              <Label htmlFor="daily_summary_enabled">Resumo do dia</Label>
+              <FormSelect
+                id="daily_summary_enabled"
+                name="daily_summary_enabled"
+                defaultValue={settings.daily_summary_enabled ?? "false"}
+                options={[
+                  { value: "false", label: "Desativado" },
+                  { value: "true", label: "Ativado" },
+                ]}
+              />
+            </div>
+            <div className="sm:col-span-2">
               <Button type="submit">Salvar</Button>
             </div>
           </form>

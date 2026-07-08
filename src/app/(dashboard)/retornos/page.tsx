@@ -1,4 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { spDayKey } from "@/lib/agenda";
+import {
+  FOLLOW_UP_LIGHT_META,
+  followUpLight,
+} from "@/lib/followup-light";
 import { addFollowUp, setFollowUpStatus } from "./actions";
 import { StatusBadge, type StatusSemantic } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -110,7 +115,7 @@ export default async function RetornosPage() {
           <CardTitle>Em acompanhamento ({active.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <FollowUpTable rows={active} />
+          <FollowUpTable rows={active} todayKey={spDayKey(new Date())} />
         </CardContent>
       </Card>
 
@@ -141,7 +146,14 @@ interface Row {
   notes: string | null;
 }
 
-function FollowUpTable({ rows }: { rows: Row[] }) {
+function FollowUpTable({
+  rows,
+  todayKey,
+}: {
+  rows: Row[];
+  /** quando presente, mostra o semáforo de proximidade do retorno */
+  todayKey?: string;
+}) {
   if (rows.length === 0) {
     return <p className="text-sm text-muted-foreground">Nenhum retorno aqui.</p>;
   }
@@ -161,7 +173,23 @@ function FollowUpTable({ rows }: { rows: Row[] }) {
         {rows.map((r) => (
           <TableRow key={r.id}>
             <TableCell>
-              <span className="font-medium">{r.patient_name}</span>
+              <span className="flex items-center gap-2 font-medium">
+                {todayKey && (
+                  <span
+                    className={`size-2.5 shrink-0 rounded-full ${FOLLOW_UP_LIGHT_META[followUpLight(r.due_date, todayKey)].dotClass}`}
+                    title={
+                      FOLLOW_UP_LIGHT_META[followUpLight(r.due_date, todayKey)]
+                        .label
+                    }
+                    aria-label={
+                      FOLLOW_UP_LIGHT_META[followUpLight(r.due_date, todayKey)]
+                        .label
+                    }
+                    role="img"
+                  />
+                )}
+                {r.patient_name}
+              </span>
               <span className="block text-xs text-muted-foreground">
                 {r.phone}
                 {r.notes ? ` · ${r.notes}` : ""}

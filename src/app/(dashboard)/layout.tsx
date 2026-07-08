@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOpenUrgencyCount } from "@/lib/urgency-count";
 import { logout } from "@/app/login/actions";
 import { NavLinks } from "@/components/nav-links";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,10 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, role")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, urgencyCount] = await Promise.all([
+    supabase.from("profiles").select("name, role").eq("id", user.id).single(),
+    getOpenUrgencyCount(),
+  ]);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
             <span className="text-sm font-semibold whitespace-nowrap">
               Dr. Alberto Rassi
             </span>
-            <NavLinks />
+            <NavLinks urgencyCount={urgencyCount} />
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">

@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { URGENCY_COUNT_TAG } from "@/lib/urgency-count";
 import type { UrgencyStatus } from "@/lib/urgencies";
 
 export async function setUrgencyStatus(formData: FormData) {
@@ -28,4 +29,5 @@ export async function setUrgencyStatus(formData: FormData) {
   );
   if (error) throw new Error(error.message);
   revalidatePath("/urgencias");
+  revalidateTag(URGENCY_COUNT_TAG);
 }

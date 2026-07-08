@@ -13,6 +13,43 @@ export const UNIT_LABELS: Record<UnitId, string> = {
 
 export const ALL_UNITS: UnitId[] = ["CRD", "SFA", "EINSTEIN"];
 
+/** Rótulo curto para espaços apertados (legenda, chips do calendário). */
+export const UNIT_SHORT_LABELS: Record<UnitId, string> = {
+  CRD: "CRD",
+  SFA: "São Francisco",
+  EINSTEIN: "Einstein",
+};
+
+/**
+ * Cor FIXA por hospital, a mesma em todas as telas (tokens --unit-* no CSS).
+ * Strings literais para o scanner do Tailwind; identidade, nunca estado —
+ * status continua na paleta semântica (StatusBadge).
+ */
+export const UNIT_COLOR = {
+  CRD: {
+    dot: "bg-unit-crd",
+    block: "border-unit-crd bg-unit-crd/15",
+    text: "text-unit-crd",
+  },
+  SFA: {
+    dot: "bg-unit-sfa",
+    block: "border-unit-sfa bg-unit-sfa/15",
+    text: "text-unit-sfa",
+  },
+  EINSTEIN: {
+    dot: "bg-unit-einstein",
+    block: "border-unit-einstein bg-unit-einstein/15",
+    text: "text-unit-einstein",
+  },
+} as const satisfies Record<UnitId, { dot: string; block: string; text: string }>;
+
+/** Estilo neutro para eventos sem prefixo de unidade no título. */
+export const NO_UNIT_COLOR = {
+  dot: "bg-muted-foreground/50",
+  block: "border-muted-foreground/50 bg-muted",
+  text: "text-muted-foreground",
+} as const;
+
 const PREFIX_PATTERNS: Array<[RegExp, UnitId]> = [
   [/^\s*\[CRD\]\s*/i, "CRD"],
   [/^\s*\[SFA?\]\s*/i, "SFA"], // [SF] oficial; [SFA] aceito defensivamente

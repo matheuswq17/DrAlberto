@@ -5,6 +5,7 @@ import {
   suspectRowsWarning,
   type SourceWarning,
 } from "@/lib/today";
+import { FunnelChart } from "@/components/funnel-chart";
 import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import {
   Card,
@@ -72,32 +73,41 @@ export default async function FunilPage() {
 
       {metrics && metrics.totalLeads > 0 && (
         <>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Conversas registradas</CardDescription>
-                <CardTitle className="text-2xl">{metrics.totalLeads}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Conversas de FAQ</CardDescription>
-                <CardTitle className="text-2xl">{metrics.totalFaq}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>FAQ que agendaram</CardDescription>
-                <CardTitle className="text-2xl">{metrics.faqConverted}</CardTitle>
-              </CardHeader>
-            </Card>
+          <div className="grid gap-6 lg:grid-cols-[minmax(220px,1fr)_2fr]">
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Taxa de conversão</CardDescription>
-                <CardTitle className="text-2xl">
+                <CardTitle className="text-5xl tabular-nums">
                   {(metrics.conversionRate * 100).toFixed(0)}%
                 </CardTitle>
               </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {metrics.faqConverted} de {metrics.totalFaq} conversa
+                  {metrics.totalFaq === 1 ? "" : "s"} de dúvida virou consulta
+                  marcada.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Da conversa ao agendamento</CardTitle>
+                <CardDescription>
+                  Cada etapa é parte da anterior.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FunnelChart
+                  stages={[
+                    {
+                      label: "Conversas registradas",
+                      value: metrics.totalLeads,
+                    },
+                    { label: "Conversas de FAQ", value: metrics.totalFaq },
+                    { label: "FAQ que agendaram", value: metrics.faqConverted },
+                  ]}
+                />
+              </CardContent>
             </Card>
           </div>
 
