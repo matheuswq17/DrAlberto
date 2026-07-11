@@ -3,13 +3,17 @@ import Link from "next/link";
 import {
   BellIcon,
   Building2Icon,
+  CalendarClockIcon,
   CalendarIcon,
   CalendarX2Icon,
+  CheckIcon,
   ClockIcon,
   PuzzleIcon,
   TriangleAlertIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { buildGreeting } from "@/lib/greeting";
+import { cn } from "@/lib/utils";
 import { getTodayAgenda } from "@/lib/today";
 import { getNextSlots } from "@/lib/next-slots";
 import { getOpenUrgencyCount } from "@/lib/urgency-count";
@@ -119,19 +123,35 @@ export default async function OverviewPage({
     .filter((u) => u.next)
     .sort((a, b) => a.next!.start.getTime() - b.next!.start.getTime())[0];
 
-  const attentionItems: Array<{ text: string; href: string }> = [];
+  // Central de pendências v1 — só o que o painel já calcula com dados
+  // reais (sinalizações do bot, retornos atrasados). Alertas de fonte/config
+  // (ex.: grade ausente) já aparecem no banner de SourceWarnings acima, então
+  // não entram aqui de novo para não duplicar o mesmo aviso na página.
+  interface PendingItem {
+    icon: LucideIcon;
+    tone: "urgent" | "warning";
+    text: string;
+    href: string;
+  }
+  const pendingItems: PendingItem[] = [];
   if (urgencyCount > 0) {
-    attentionItems.push({
+    pendingItems.push({
+      icon: TriangleAlertIcon,
+      tone: "urgent",
       text: `${urgencyCount} sinalizaç${urgencyCount > 1 ? "ões" : "ão"} do bot aguardando revisão`,
       href: "/urgencias",
     });
   }
   if (overdueFollowUps > 0) {
-    attentionItems.push({
+    pendingItems.push({
+      icon: CalendarClockIcon,
+      tone: "warning",
       text: `${overdueFollowUps} retorno${overdueFollowUps > 1 ? "s" : ""} atrasado${overdueFollowUps > 1 ? "s" : ""}`,
-      href: "/retornos",
+      href: "/retornos?filter=atrasados",
     });
   }
+  // urgente primeiro — ordena por prioridade real, não por ordem de cálculo.
+  pendingItems.sort((a, b) => (a.tone === b.tone ? 0 : a.tone === "urgent" ? -1 : 1));
 
   const warnings = [...agenda.warnings, ...nextSlots.warnings];
 
@@ -174,12 +194,14 @@ export default async function OverviewPage({
               ? `${agenda.byUnit.length} unidade${agenda.byUnit.length > 1 ? "s" : ""}`
               : undefined
           }
+          href="/agenda?view=dia"
         />
         <MetricCard
           icon={ClockIcon}
           label="Próximo horário livre"
           value={soonestSlot ? formatTime(soonestSlot.next!.start.toISOString()) : "—"}
           caption={soonestSlot ? soonestSlot.label : "sem grade cadastrada"}
+          href="/agenda"
         />
         <MetricCard
           icon={TriangleAlertIcon}
@@ -187,12 +209,14 @@ export default async function OverviewPage({
           value={urgencyCount}
           caption={urgencyCount > 0 ? "Requer atenção" : "Nenhuma pendente"}
           tone={urgencyCount > 0 ? "urgent" : "default"}
+          href="/urgencias"
         />
         <MetricCard
           icon={PuzzleIcon}
           label="Encaixes abertos"
           value={radar.openSlots.length}
           caption={`${radar.waiting.length} na fila de espera`}
+          href="/encaixes"
         />
       </div>
 
@@ -279,30 +303,45 @@ export default async function OverviewPage({
 
           <Card
             className={
-              attentionItems.length > 0
+              pendingItems.length > 0
                 ? "border-status-warning/40 bg-status-warning/5"
                 : undefined
             }
           >
             <CardHeader>
-              <CardTitle>Atenção necessária</CardTitle>
+              <CardTitle>Central de pendências</CardTitle>
+              {pendingItems.length > 0 && (
+                <CardDescription>
+                  O que já foi identificado e ainda precisa de revisão.
+                </CardDescription>
+              )}
             </CardHeader>
-            <CardContent className="grid gap-2">
-              {attentionItems.length === 0 ? (
-                <p className="text-sm text-status-ok-foreground">
+            <CardContent className="grid gap-1">
+              {pendingItems.length === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-status-ok-foreground">
+                  <CheckIcon className="size-4 shrink-0" aria-hidden="true" />
                   Tudo em dia — nenhuma pendência agora.
                 </p>
               ) : (
-                attentionItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center justify-between gap-2 text-sm font-medium text-status-warning-foreground hover:underline"
-                  >
-                    {item.text}
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                ))
+                pendingItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md px-1 py-1.5 text-sm font-medium transition-colors hover:bg-card/60",
+                        item.tone === "urgent"
+                          ? "text-status-urgent-foreground"
+                          : "text-status-warning-foreground"
+                      )}
+                    >
+                      <ItemIcon className="size-4 shrink-0" aria-hidden="true" />
+                      <span className="flex-1">{item.text}</span>
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  );
+                })
               )}
             </CardContent>
           </Card>

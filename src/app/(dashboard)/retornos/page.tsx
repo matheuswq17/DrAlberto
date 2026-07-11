@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { spDayKey } from "@/lib/agenda";
 import {
@@ -50,7 +51,17 @@ function fmtDate(d: string | null): string {
   }).format(new Date(`${d}T12:00:00`));
 }
 
-export default async function RetornosPage() {
+export default async function RetornosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const params = await searchParams;
+  // Filtro vindo da Central de pendências (Visão geral) — parâmetro
+  // desconhecido/ausente cai no fallback seguro de mostrar tudo.
+  const filterAtrasados = params.filter === "atrasados";
+  const todayKey = spDayKey(new Date());
+
   const supabase = await createClient();
   const { data: rows } = await supabase
     .from("follow_ups")
@@ -65,6 +76,9 @@ export default async function RetornosPage() {
   const done = (rows ?? []).filter((r) =>
     ["concluido", "cancelado"].includes(r.status)
   );
+  const visibleActive = filterAtrasados
+    ? active.filter((r) => followUpLight(r.due_date, todayKey) === "vermelho")
+    : active;
 
   return (
     <div className="grid gap-6 animate-in fade-in duration-200">
@@ -130,10 +144,32 @@ export default async function RetornosPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Em acompanhamento ({active.length})</CardTitle>
+          <CardTitle>
+            Em acompanhamento (
+            {filterAtrasados
+              ? `${visibleActive.length} de ${active.length}`
+              : active.length}
+            )
+          </CardTitle>
+          {filterAtrasados && (
+            <CardDescription className="flex items-center gap-2">
+              Mostrando só retornos atrasados.
+              <Link href="/retornos" className="font-medium text-primary hover:underline">
+                Ver todos →
+              </Link>
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
-          <FollowUpTable rows={active} todayKey={spDayKey(new Date())} />
+          <FollowUpTable
+            rows={visibleActive}
+            todayKey={todayKey}
+            emptyMessage={
+              filterAtrasados
+                ? "Nenhum retorno atrasado agora."
+                : undefined
+            }
+          />
         </CardContent>
       </Card>
 
@@ -167,16 +203,18 @@ interface Row {
 function FollowUpTable({
   rows,
   todayKey,
+  emptyMessage,
 }: {
   rows: Row[];
   /** quando presente, mostra o semáforo de proximidade do retorno */
   todayKey?: string;
+  emptyMessage?: string;
 }) {
   if (rows.length === 0) {
     return (
       <EmptyState icon={InboxIcon}>
-        Nenhum retorno aqui. Adicione pelo formulário acima quando um
-        paciente precisar voltar.
+        {emptyMessage ??
+          "Nenhum retorno aqui. Adicione pelo formulário acima quando um paciente precisar voltar."}
       </EmptyState>
     );
   }
