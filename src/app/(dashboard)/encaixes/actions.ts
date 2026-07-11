@@ -47,7 +47,10 @@ export async function removeFromWaitingList(formData: FormData) {
 }
 
 /** Aprovar = envia a oferta por WhatsApp. O site NÃO escreve no Calendar. */
-export async function approveSuggestion(formData: FormData) {
+export async function approveSuggestion(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   const { supabase, user } = await authed();
   const slotId = String(formData.get("slot_id"));
   const waitingId = String(formData.get("waiting_id"));
@@ -56,7 +59,9 @@ export async function approveSuggestion(formData: FormData) {
     supabase.from("freed_slots").select("*").eq("id", slotId).single(),
     supabase.from("waiting_list").select("*").eq("id", waitingId).single(),
   ]);
-  if (!slot || !patient) throw new Error("Vaga ou paciente não encontrado");
+  if (!slot || !patient) {
+    return { ok: false, error: "Vaga ou paciente não encontrado." };
+  }
 
   const s = slot as FreedSlotRow;
   const p = patient as WaitingRow;
@@ -65,7 +70,7 @@ export async function approveSuggestion(formData: FormData) {
   // "aberta" (outra submissão já aprovou/ignorou), não reenvia a oferta.
   if (s.status !== "aberta") {
     revalidatePath("/encaixes");
-    return;
+    return { ok: true };
   }
 
   const unitLabel = s.unit ? UNIT_LABELS[s.unit as UnitId] : "a combinar";
@@ -78,7 +83,12 @@ export async function approveSuggestion(formData: FormData) {
     sentBy: user.id,
   });
   if (!result.ok) {
-    throw new Error(`Envio falhou: ${result.error}`);
+    // Detalhe técnico do provedor fica só no log do servidor.
+    console.error("approveSuggestion: envio de WhatsApp falhou:", result.error);
+    return {
+      ok: false,
+      error: "Não foi possível enviar a oferta por WhatsApp agora. Tente novamente.",
+    };
   }
 
   const now = new Date().toISOString();
@@ -98,6 +108,7 @@ export async function approveSuggestion(formData: FormData) {
       .eq("id", p.id),
   ]);
   revalidatePath("/encaixes");
+  return { ok: true };
 }
 
 /** Rejeitar candidato = registra a rejeição; o próximo da fila é sugerido. */

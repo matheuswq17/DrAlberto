@@ -173,7 +173,12 @@ function FollowUpTable({
   todayKey?: string;
 }) {
   if (rows.length === 0) {
-    return <EmptyState icon={InboxIcon}>Nenhum retorno aqui.</EmptyState>;
+    return (
+      <EmptyState icon={InboxIcon}>
+        Nenhum retorno aqui. Adicione pelo formulário acima quando um
+        paciente precisar voltar.
+      </EmptyState>
+    );
   }
   return (
     <Table>

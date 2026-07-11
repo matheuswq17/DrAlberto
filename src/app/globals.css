@@ -92,8 +92,11 @@
   --card-foreground: #14212b;
   --popover: #ffffff;
   --popover-foreground: #14212b;
-  /* Cor de MARCA — elementos estruturais (navegação, botão primário) */
-  --primary: #0f8b8d;
+  /* Cor de MARCA — elementos estruturais (navegação, botão primário).
+     #0d7a7c (não o teal mais claro #0f8b8d) para manter 4.5:1 de contraste
+     como texto sobre branco/#F6F8F7 (WCAG AA) — o tom mais claro só passava
+     em superfícies de bg-primary com texto branco por cima, não como texto. */
+  --primary: #0d7a7c;
   --primary-foreground: #ffffff;
   --secondary: #ddf4f1;
   --secondary-foreground: #0d5c5e;
@@ -104,7 +107,7 @@
   --destructive: #d64545;
   --border: #e2e8e6;
   --input: #e2e8e6;
-  --ring: #0f8b8d;
+  --ring: #0d7a7c;
   --chart-1: #0f8b8d;
   --chart-2: #4fb3af;
   --chart-3: #8fcac6;
@@ -113,12 +116,12 @@
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #14212b;
-  --sidebar-primary: #0f8b8d;
+  --sidebar-primary: #0d7a7c;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ddf4f1;
   --sidebar-accent-foreground: #0d5c5e;
   --sidebar-border: #e7ecea;
-  --sidebar-ring: #0f8b8d;
+  --sidebar-ring: #0d7a7c;
 
   /* Paleta semântica de status (claro) — vermelho só para urgência real,
      âmbar para atenção/pendência, verde para sucesso/confirmado, azul só

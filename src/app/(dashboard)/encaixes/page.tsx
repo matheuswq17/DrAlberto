@@ -105,7 +105,10 @@ export default async function EncaixesPage() {
                 <div className="flex gap-2">
                   {candidate && (
                     <>
-                      <form action={approveSuggestion}>
+                      <ActionForm
+                        action={approveSuggestion}
+                        successMessage="Oferta enviada por WhatsApp ✓"
+                      >
                         <input type="hidden" name="slot_id" value={slot.id} />
                         <input
                           type="hidden"
@@ -115,7 +118,7 @@ export default async function EncaixesPage() {
                         <SubmitButton size="sm" pendingLabel="Enviando…">
                           Aprovar e enviar WhatsApp
                         </SubmitButton>
-                      </form>
+                      </ActionForm>
                       <form action={rejectSuggestion}>
                         <input type="hidden" name="slot_id" value={slot.id} />
                         <input
@@ -199,7 +202,10 @@ export default async function EncaixesPage() {
             </ActionForm>
 
             {waiting.length === 0 ? (
-              <EmptyState icon={UserXIcon}>Fila vazia.</EmptyState>
+              <EmptyState icon={UserXIcon}>
+                Fila vazia. Pacientes adicionados pelo formulário acima
+                entram aqui e são sugeridos quando surge uma vaga.
+              </EmptyState>
             ) : (
               <div className="grid gap-2">
                 {waiting.map((w) => (
