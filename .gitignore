@@ -55,3 +55,8 @@ PROMPT_*.md
 
 # screenshots locais de verificação
 screenshots/
+
+# resultados locais de medição de performance (sem PII, mas efêmero)
+/scripts/.perf-results/
+/test-results/
+/playwright-report/

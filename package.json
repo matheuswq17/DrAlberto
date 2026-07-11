@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "perf:prod": "tsx scripts/perf-prod.ts",
     "worker": "tsx worker/index.ts",
     "sanity": "tsx scripts/sanity.ts"
   },
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/node-cron": "^3.0.11",
