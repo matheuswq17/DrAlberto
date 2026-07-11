@@ -21,7 +21,7 @@ const STATUS_BADGE: Record<
   UrgencyStatus,
   { label: string; semantic: StatusSemantic; icon: LucideIcon }
 > = {
-  aberta: { label: "Aberta", semantic: "urgent", icon: CircleAlertIcon },
+  aberta: { label: "Aguardando revisão", semantic: "urgent", icon: CircleAlertIcon },
   vista: { label: "Vista", semantic: "warning", icon: EyeIcon },
   resolvida: { label: "Resolvida", semantic: "ok", icon: CheckCircle2Icon },
 };
@@ -34,16 +34,16 @@ export default async function UrgenciasPage() {
   return (
     <div className="grid gap-6 animate-in fade-in duration-200">
       <PageHeader
-        eyebrow="Urgências"
-        title="Urgências"
-        description="Triagens que o bot marcou como urgentes. Este painel é consultado quando você quiser — nada aqui dispara notificação para o médico."
+        eyebrow="Sinalizações do bot"
+        title="Sinalizações do bot"
+        description="Casos identificados pelo chatbot que exigem revisão humana. Este painel não envia alertas automáticos ao médico."
       />
 
       <SourceWarnings warnings={warnings} />
 
       {abertas > 0 && (
         <p className="text-sm font-medium text-status-urgent-foreground">
-          {abertas} urgência{abertas > 1 ? "s" : ""} sem revisão.
+          {abertas} sinalizaç{abertas > 1 ? "ões" : "ão"} aguardando revisão.
         </p>
       )}
 
@@ -52,7 +52,7 @@ export default async function UrgenciasPage() {
           <Card>
             <CardContent className="grid gap-2 py-8 text-center">
               <EmptyState icon={CheckCircle2Icon} className="justify-center">
-                Nenhuma urgência registrada pelo bot.
+                Nenhuma sinalização do bot registrada.
               </EmptyState>
               <ReadOkStamp readAt={readAt} label="Leitura da planilha OK" />
             </CardContent>
@@ -122,7 +122,7 @@ export default async function UrgenciasPage() {
                           <input type="hidden" name="key" value={item.key} />
                           <input type="hidden" name="status" value="resolvida" />
                           <Button size="sm" type="submit">
-                            Resolvida
+                            Marcar como resolvida
                           </Button>
                         </form>
                       )}

@@ -9,6 +9,7 @@ import {
   PuzzleIcon,
   TriangleAlertIcon,
 } from "lucide-react";
+import { buildGreeting } from "@/lib/greeting";
 import { getTodayAgenda } from "@/lib/today";
 import { getNextSlots } from "@/lib/next-slots";
 import { getOpenUrgencyCount } from "@/lib/urgency-count";
@@ -47,12 +48,6 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function greetingFor(hour: number): string {
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
-}
-
 export default async function OverviewPage({
   searchParams,
 }: {
@@ -79,9 +74,6 @@ export default async function OverviewPage({
         .single()
     : { data: null };
 
-  const displayName = (profile?.name ?? user?.email ?? "").split(" ")[0] || "";
-  const salutation = profile?.role === "medico" ? "Dr. " : "";
-
   const now = new Date();
   const hourNow = Number(
     new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", hourCycle: "h23", timeZone: TZ }).format(
@@ -96,6 +88,9 @@ export default async function OverviewPage({
       timeZone: TZ,
     }).format(now)
   );
+  // Nome ausente (sem perfil cadastrado) cai no fallback "Bom dia" sem nome —
+  // não usamos o e-mail aqui, que não é um nome de exibição.
+  const greeting = buildGreeting(hourNow, profile?.name ?? null, profile?.role ?? null);
 
   const [agenda, nextSlots, urgencyCount, radar] = await Promise.all([
     getTodayAgenda(),
@@ -127,7 +122,7 @@ export default async function OverviewPage({
   const attentionItems: Array<{ text: string; href: string }> = [];
   if (urgencyCount > 0) {
     attentionItems.push({
-      text: `${urgencyCount} urgência${urgencyCount > 1 ? "s" : ""} sem revisão`,
+      text: `${urgencyCount} sinalizaç${urgencyCount > 1 ? "ões" : "ão"} do bot aguardando revisão`,
       href: "/urgencias",
     });
   }
@@ -144,7 +139,7 @@ export default async function OverviewPage({
     <div className="grid gap-6 animate-in fade-in duration-200">
       <PageHeader
         eyebrow="Visão geral"
-        title={`${greetingFor(hourNow)}${displayName ? `, ${salutation}${displayName}` : ""}`}
+        title={greeting}
         description={dateLabel}
         actions={
           <Link
@@ -152,8 +147,8 @@ export default async function OverviewPage({
             className="relative flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
             aria-label={
               urgencyCount > 0
-                ? `${urgencyCount} urgência${urgencyCount > 1 ? "s" : ""} sem revisão — abrir Urgências`
-                : "Nenhuma urgência pendente — abrir Urgências"
+                ? `${urgencyCount} sinalizaç${urgencyCount > 1 ? "ões" : "ão"} do bot aguardando revisão — abrir Sinalizações do bot`
+                : "Nenhuma sinalização do bot pendente — abrir Sinalizações do bot"
             }
           >
             <BellIcon className="size-4" aria-hidden="true" />
@@ -188,7 +183,7 @@ export default async function OverviewPage({
         />
         <MetricCard
           icon={TriangleAlertIcon}
-          label="Urgências abertas"
+          label="Sinalizações abertas"
           value={urgencyCount}
           caption={urgencyCount > 0 ? "Requer atenção" : "Nenhuma pendente"}
           tone={urgencyCount > 0 ? "urgent" : "default"}
@@ -231,7 +226,7 @@ export default async function OverviewPage({
                           {formatTime(event.start)}
                         </p>
                         {lead?.urgencia && (
-                          <StatusBadge semantic="urgent">urgência</StatusBadge>
+                          <StatusBadge semantic="urgent">sinalização</StatusBadge>
                         )}
                       </div>
                       <p className="text-sm font-medium text-foreground">

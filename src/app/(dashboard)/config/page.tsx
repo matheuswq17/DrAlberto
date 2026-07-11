@@ -280,8 +280,8 @@ export default async function ConfigPage() {
               </InfoTip>
             </CardTitle>
             <CardDescription>
-              Toda manhã, o essencial do dia: consultas, urgências pendentes e
-              encaixes em aberto.
+              Toda manhã, o essencial do dia: consultas, sinalizações do bot
+              pendentes e encaixes em aberto.
             </CardDescription>
           </CardHeader>
           <CardContent>

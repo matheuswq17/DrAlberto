@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 export const NAV_ITEMS: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/", label: "Visão geral", icon: LayoutGridIcon },
   { href: "/agenda", label: "Agenda", icon: CalendarIcon },
-  { href: "/urgencias", label: "Urgências", icon: TriangleAlertIcon },
+  { href: "/urgencias", label: "Sinalizações do bot", icon: TriangleAlertIcon },
   { href: "/encaixes", label: "Encaixes", icon: PuzzleIcon },
   { href: "/retornos", label: "Retornos", icon: RepeatIcon },
   { href: "/funil", label: "Funil", icon: BarChart3Icon },
@@ -42,7 +42,7 @@ export function SidebarNav({
   const pathname = usePathname();
 
   // Pulso finito (não infinito) só quando a contagem SOBE — chama atenção
-  // para uma urgência nova sem virar sirene constante.
+  // para uma sinalização nova sem virar sirene constante.
   const prevCount = useRef(urgencyCount);
   const [justIncreased, setJustIncreased] = useState(false);
   useEffect(() => {
@@ -77,7 +77,9 @@ export function SidebarNav({
             )}
           >
             <Icon className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className={cn(compact && "sr-only")}>{item.label}</span>
+            <span className={cn("min-w-0 truncate", compact && "sr-only")}>
+              {item.label}
+            </span>
             {item.href === "/urgencias" && urgencyCount > 0 && (
               <span
                 className={cn(
@@ -86,7 +88,7 @@ export function SidebarNav({
                   justIncreased &&
                     "motion-reduce:animate-none animate-[badge-pulse_0.6s_ease-in-out_2]"
                 )}
-                aria-label={`${urgencyCount} urgência${urgencyCount > 1 ? "s" : ""} sem revisão`}
+                aria-label={`${urgencyCount} sinalizaç${urgencyCount > 1 ? "ões" : "ão"} do bot aguardando revisão`}
               >
                 {urgencyCount}
               </span>

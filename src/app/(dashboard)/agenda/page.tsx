@@ -225,7 +225,7 @@ async function DayView() {
                           {event.patientLabel || "(sem título)"}
                           {lead?.urgencia && (
                             <StatusBadge semantic="urgent" className="ml-2">
-                              urgência
+                              sinalização
                             </StatusBadge>
                           )}
                         </p>

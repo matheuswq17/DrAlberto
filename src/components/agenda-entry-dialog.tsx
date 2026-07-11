@@ -37,7 +37,7 @@ export function EntryDetailBody({ entry }: { entry: AgendaEntry }) {
       </p>
       {entry.lead?.urgencia && (
         <p>
-          <StatusBadge semantic="urgent">urgência</StatusBadge>
+          <StatusBadge semantic="urgent">sinalização</StatusBadge>
         </p>
       )}
       <LeadFacts lead={entry.lead} />
