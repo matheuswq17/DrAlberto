@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { ActionForm } from "@/components/action-form";
+import { CopyScheduleDialog } from "@/components/copy-schedule-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormSelect } from "@/components/form-select";
 import { InfoTip } from "@/components/info-tip";
 import { PageHeader } from "@/components/page-header";
-import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
-import { addScheduleRow, deleteScheduleRow, saveSettings } from "./actions";
+import { ScheduleAddForm } from "@/components/schedule-add-form";
+import { UNIT_LABELS, type UnitId } from "@/lib/units";
+import { addScheduleRow, copyScheduleRow, deleteScheduleRow, saveSettings } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
 import {
   Card,
@@ -73,12 +75,18 @@ export default async function ConfigPage() {
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Grade de atendimento por unidade</CardTitle>
-          <CardDescription>
-            Usada para calcular o &quot;próximo horário disponível&quot; — os
-            eventos do Google Calendar são descontados desta grade.
-          </CardDescription>
+        <CardHeader className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <CardTitle>Grade de atendimento por unidade</CardTitle>
+            <CardDescription>
+              Usada para calcular o &quot;próximo horário disponível&quot; —
+              os eventos do Google Calendar são descontados desta grade.
+            </CardDescription>
+          </div>
+          <CopyScheduleDialog
+            schedules={(schedules ?? []) as ScheduleRowDb[]}
+            action={copyScheduleRow}
+          />
         </CardHeader>
         <CardContent className="grid gap-4">
           <Table>
@@ -126,54 +134,10 @@ export default async function ConfigPage() {
             </TableBody>
           </Table>
 
-          <form
+          <ScheduleAddForm
             action={addScheduleRow}
-            className="grid grid-cols-2 items-end gap-3 sm:grid-cols-6"
-          >
-            <div className="grid gap-1.5">
-              <Label htmlFor="unit">Unidade</Label>
-              <FormSelect
-                id="unit"
-                name="unit"
-                options={ALL_UNITS.map((u) => ({
-                  value: u,
-                  label: UNIT_LABELS[u],
-                }))}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="weekday">Dia</Label>
-              <FormSelect
-                id="weekday"
-                name="weekday"
-                defaultValue="1"
-                options={WEEKDAYS.map((d, i) => ({ value: String(i), label: d }))}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="start_time">Início</Label>
-              <Input id="start_time" name="start_time" type="time" required />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="end_time">Fim</Label>
-              <Input id="end_time" name="end_time" type="time" required />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="slot_minutes">Duração da consulta (min)</Label>
-              <Input
-                id="slot_minutes"
-                name="slot_minutes"
-                type="number"
-                min={10}
-                step={5}
-                defaultValue={30}
-              />
-              <p className="text-xs text-muted-foreground">
-                Tempo reservado para cada paciente.
-              </p>
-            </div>
-            <SubmitButton pendingLabel="Adicionando…">Adicionar</SubmitButton>
-          </form>
+            existingSchedules={(schedules ?? []) as ScheduleRowDb[]}
+          />
         </CardContent>
       </Card>
 
@@ -202,6 +166,7 @@ export default async function ConfigPage() {
             <ActionForm
               action={saveSettings}
               successMessage="Configuração salva ✓"
+              trackUnsaved
               // inputs são uncontrolled: a key remonta o form quando os
               // valores salvos mudam, em vez de trocar defaultValue de um
               // campo vivo
@@ -250,6 +215,7 @@ export default async function ConfigPage() {
             <ActionForm
               action={saveSettings}
               successMessage="Configuração salva ✓"
+              trackUnsaved
               key={`fu-${settings.followup_lead_days ?? ""}`}
               className="grid grid-cols-1 gap-4 sm:grid-cols-2"
             >
@@ -291,6 +257,7 @@ export default async function ConfigPage() {
             <ActionForm
               action={saveSettings}
               successMessage="Configuração salva ✓"
+              trackUnsaved
               key={`ds-${settings.daily_summary_enabled ?? ""}`}
               className="grid grid-cols-1 gap-4 sm:grid-cols-2"
             >

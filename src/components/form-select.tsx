@@ -24,18 +24,23 @@ export function FormSelect({
   options,
   defaultValue,
   className,
+  onValueChange,
 }: {
   id?: string;
   name: string;
   options: FormSelectOption[];
   defaultValue?: string;
   className?: string;
+  onValueChange?: (value: string) => void;
 }) {
   return (
     <Select
       name={name}
       items={options}
       defaultValue={defaultValue ?? options[0]?.value}
+      onValueChange={
+        onValueChange ? (value) => onValueChange(value ?? "") : undefined
+      }
     >
       <SelectTrigger id={id} className={cn("h-9 w-full", className)}>
         <SelectValue />
