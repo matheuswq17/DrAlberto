@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { fetchLeadsWithQuality } from "@/lib/google/sheets";
+import { filterByPeriod, isPeriod, type Period } from "@/lib/funnel-period";
 import { computeFunnel, type FunnelMetrics } from "@/lib/metrics";
 import {
   isGoogleConfigured,
   suspectRowsWarning,
   type SourceWarning,
 } from "@/lib/today";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/empty-state";
 import { FunnelChart } from "@/components/funnel-chart";
 import { PageHeader } from "@/components/page-header";
@@ -28,8 +31,18 @@ import { ListXIcon, MessageSquareIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function FunilPage() {
+export default async function FunilPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
+  const params = await searchParams;
+  // Parâmetro inválido/ausente cai no fallback seguro: todo o período, o
+  // mesmo comportamento de sempre (não muda número nenhum sem escolha explícita).
+  const period = isPeriod(params.period) ? params.period : null;
+
   let metrics: FunnelMetrics | null = null;
+  let unrecognizedDate = 0;
   const warnings: SourceWarning[] = [];
   if (!isGoogleConfigured().sheets) {
     warnings.push({
@@ -39,7 +52,9 @@ export default async function FunilPage() {
   } else {
     try {
       const { leads, suspects } = await fetchLeadsWithQuality();
-      metrics = computeFunnel(leads);
+      const result = filterByPeriod(leads, period);
+      unrecognizedDate = result.unrecognizedDate;
+      metrics = computeFunnel(result.filtered);
       const suspect = suspectRowsWarning(suspects);
       if (suspect) warnings.push(suspect);
     } catch (err) {
@@ -57,9 +72,18 @@ export default async function FunilPage() {
         eyebrow="Funil"
         title="Funil FAQ → agendamento"
         description="Quantas conversas de dúvida viraram consulta, e o que as pessoas mais perguntam sem marcar."
+        actions={<PeriodSwitch period={period} />}
       />
 
       <SourceWarnings warnings={warnings} />
+
+      {period && unrecognizedDate > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {unrecognizedDate} conversa{unrecognizedDate > 1 ? "s" : ""} sem
+          data reconhecida na planilha não {unrecognizedDate > 1 ? "entram" : "entra"} neste
+          recorte por período.
+        </p>
+      )}
 
       {metrics && metrics.totalLeads === 0 && (
         <Card>
@@ -85,8 +109,10 @@ export default async function FunilPage() {
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                   {metrics.faqConverted} de {metrics.totalFaq} conversa
-                  {metrics.totalFaq === 1 ? "" : "s"} de dúvida virou consulta
-                  marcada.
+                  {metrics.totalFaq === 1 ? "" : "s"} classificada
+                  {metrics.totalFaq === 1 ? "" : "s"} como FAQ{" "}
+                  {metrics.faqConverted === 1 ? "resultou" : "resultaram"} em
+                  agendamento.
                 </p>
               </CardContent>
             </Card>
@@ -136,6 +162,38 @@ export default async function FunilPage() {
           <ReadOkStamp readAt={readAt} label="Leitura da planilha OK" />
         </>
       )}
+    </div>
+  );
+}
+
+function PeriodSwitch({ period }: { period: Period | null }) {
+  const options: Array<{ value: Period | null; label: string }> = [
+    { value: null, label: "Todo o período" },
+    { value: "7", label: "7 dias" },
+    { value: "30", label: "30 dias" },
+    { value: "90", label: "90 dias" },
+  ];
+  return (
+    <div className="inline-flex w-fit items-center rounded-lg bg-muted p-[3px]">
+      {options.map((opt) => {
+        const href = opt.value ? `/funil?period=${opt.value}` : "/funil";
+        const active = period === opt.value;
+        return (
+          <Link
+            key={opt.label}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "rounded-md px-3 py-1 text-sm whitespace-nowrap transition-colors",
+              active
+                ? "bg-card font-medium text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {opt.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
