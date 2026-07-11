@@ -1,8 +1,8 @@
 // Gráfico de funil (barras horizontais decrescentes, centralizadas).
 // Os estágios são ANINHADOS por construção (FAQ ⊆ conversas registradas,
 // agendaram ⊆ FAQ) — por isso funil, e não barras categóricas.
-// Rampa ordinal de um matiz (azul), validada para os dois modos:
-// passo mais claro ≥ 2:1 sobre fundo claro, mais escuro ≥ 2:1 sobre o escuro.
+// Rampa ordinal de um matiz (teal, a cor de marca), usando os tokens
+// --chart-1..3 — se adapta ao modo claro/escuro automaticamente.
 // Rótulos e valores ficam na tinta de texto, nunca na cor da série.
 
 export interface FunnelStage {
@@ -10,7 +10,7 @@ export interface FunnelStage {
   value: number;
 }
 
-const STAGE_COLORS = ["#86b6ef", "#2a78d6", "#184f95"];
+const STAGE_COLOR_CLASSES = ["bg-chart-1", "bg-chart-2", "bg-chart-3"];
 
 export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
   const max = Math.max(...stages.map((s) => s.value), 1);
@@ -38,10 +38,9 @@ export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
             </div>
             <div className="flex h-9 justify-center">
               <div
-                className="h-full rounded-md"
+                className={`h-full rounded-md ${STAGE_COLOR_CLASSES[i % STAGE_COLOR_CLASSES.length]}`}
                 style={{
                   width: `${stage.value > 0 ? Math.max(pct, 4) : 0}%`,
-                  backgroundColor: STAGE_COLORS[i % STAGE_COLORS.length],
                 }}
               />
             </div>

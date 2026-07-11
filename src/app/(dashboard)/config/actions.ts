@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ActionState } from "@/lib/action-state";
 import { createClient } from "@/lib/supabase/server";
 
 async function authedClient() {
@@ -35,7 +36,10 @@ export async function deleteScheduleRow(formData: FormData) {
   revalidatePath("/config");
 }
 
-export async function saveSettings(formData: FormData) {
+export async function saveSettings(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   // Cada bloco da Config tem seu próprio form; só grava as chaves presentes
   // no form enviado, para um bloco não sobrescrever os valores do outro.
@@ -64,7 +68,7 @@ export async function saveSettings(formData: FormData) {
       formData.get("daily_summary_enabled") === "true" ? "true" : "false",
     ]);
   }
-  if (entries.length === 0) return;
+  if (entries.length === 0) return { ok: true };
   const { error } = await supabase.from("app_settings").upsert(
     entries.map(([key, value]) => ({
       key,
@@ -73,6 +77,7 @@ export async function saveSettings(formData: FormData) {
       updated_by: user.id,
     }))
   );
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: error.message };
   revalidatePath("/config");
+  return { ok: true };
 }

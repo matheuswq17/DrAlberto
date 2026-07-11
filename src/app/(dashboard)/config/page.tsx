@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { ActionForm } from "@/components/action-form";
+import { EmptyState } from "@/components/empty-state";
 import { FormSelect } from "@/components/form-select";
 import { InfoTip } from "@/components/info-tip";
+import { PageHeader } from "@/components/page-header";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
 import { addScheduleRow, deleteScheduleRow, saveSettings } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CalendarOffIcon } from "lucide-react";
 
 const WEEKDAYS = [
   "Domingo",
@@ -61,8 +66,12 @@ export default async function ConfigPage() {
   const period = settings.report_period === "mensal" ? "mensal" : "semanal";
 
   return (
-    <div className="grid gap-6">
-      <h1 className="text-xl font-semibold">Configurações</h1>
+    <div className="grid gap-6 animate-in fade-in duration-200">
+      <PageHeader
+        eyebrow="Configurações"
+        title="Configurações"
+        description="Grade de atendimento, resumos por WhatsApp e lembretes automáticos."
+      />
 
       <Card>
         <CardHeader>
@@ -104,8 +113,10 @@ export default async function ConfigPage() {
               ))}
               {(schedules ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground">
-                    Nenhuma grade cadastrada ainda.
+                  <TableCell colSpan={6}>
+                    <EmptyState icon={CalendarOffIcon}>
+                      Nenhuma grade cadastrada ainda.
+                    </EmptyState>
                   </TableCell>
                 </TableRow>
               )}
@@ -163,133 +174,142 @@ export default async function ConfigPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-1.5">
-            {period === "mensal"
-              ? "Resumo mensal por WhatsApp"
-              : "Resumo semanal por WhatsApp"}
-            <InfoTip>
-              O resumo sai só no horário programado (segunda-feira de manhã, ou
-              dia 1º no mensal) — nada é enviado na hora em que as coisas
-              acontecem. Enquanto o sistema está em modo de teste, toda mensagem
-              vai para o número de teste, não para o número cadastrado aqui.
-            </InfoTip>
-          </CardTitle>
-          <CardDescription>
-            {period === "mensal"
-              ? "Você recebe um resumo do mês todo dia 1º de manhã."
-              : "Você recebe um resumo da semana toda segunda-feira de manhã."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            action={saveSettings}
-            // inputs são uncontrolled: a key remonta o form quando os valores
-            // salvos mudam, em vez de trocar defaultValue de um campo vivo
-            key={`${settings.report_phone ?? ""}|${settings.report_period ?? ""}`}
-            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            <div className="grid gap-1.5">
-              <Label htmlFor="report_phone">WhatsApp que recebe o resumo</Label>
-              <Input
-                id="report_phone"
-                name="report_phone"
-                placeholder="62999990000"
-                defaultValue={settings.report_phone ?? ""}
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="report_period">Frequência</Label>
-              <FormSelect
-                id="report_period"
-                name="report_period"
-                defaultValue={settings.report_period ?? "semanal"}
-                options={[
-                  { value: "semanal", label: "Toda semana" },
-                  { value: "mensal", label: "Todo mês" },
-                ]}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <Button type="submit">Salvar</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-1.5">
+              {period === "mensal"
+                ? "Resumo mensal por WhatsApp"
+                : "Resumo semanal por WhatsApp"}
+              <InfoTip>
+                O resumo sai só no horário programado (segunda-feira de manhã,
+                ou dia 1º no mensal) — nada é enviado na hora em que as coisas
+                acontecem. Enquanto o sistema está em modo de teste, toda
+                mensagem vai para o número de teste, não para o número
+                cadastrado aqui.
+              </InfoTip>
+            </CardTitle>
+            <CardDescription>
+              {period === "mensal"
+                ? "Você recebe um resumo do mês todo dia 1º de manhã."
+                : "Você recebe um resumo da semana toda segunda-feira de manhã."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ActionForm
+              action={saveSettings}
+              successMessage="Configuração salva ✓"
+              // inputs são uncontrolled: a key remonta o form quando os
+              // valores salvos mudam, em vez de trocar defaultValue de um
+              // campo vivo
+              key={`${settings.report_phone ?? ""}|${settings.report_period ?? ""}`}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+            >
+              <div className="grid gap-1.5">
+                <Label htmlFor="report_phone">
+                  WhatsApp que recebe o resumo
+                </Label>
+                <Input
+                  id="report_phone"
+                  name="report_phone"
+                  placeholder="62999990000"
+                  defaultValue={settings.report_phone ?? ""}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="report_period">Frequência</Label>
+                <FormSelect
+                  id="report_period"
+                  name="report_period"
+                  defaultValue={settings.report_period ?? "semanal"}
+                  options={[
+                    { value: "semanal", label: "Toda semana" },
+                    { value: "mensal", label: "Todo mês" },
+                  ]}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
+              </div>
+            </ActionForm>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lembrete automático de retorno</CardTitle>
-          <CardDescription>
-            O paciente é avisado automaticamente quando está perto da data de
-            retorno.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            action={saveSettings}
-            key={`fu-${settings.followup_lead_days ?? ""}`}
-            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            <div className="grid gap-1.5">
-              <Label htmlFor="followup_lead_days">
-                Avisar com quantos dias de antecedência
-              </Label>
-              <Input
-                id="followup_lead_days"
-                name="followup_lead_days"
-                type="number"
-                min={0}
-                defaultValue={settings.followup_lead_days ?? "3"}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <Button type="submit">Salvar</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lembrete automático de retorno</CardTitle>
+            <CardDescription>
+              O paciente é avisado automaticamente quando está perto da data
+              de retorno.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ActionForm
+              action={saveSettings}
+              successMessage="Configuração salva ✓"
+              key={`fu-${settings.followup_lead_days ?? ""}`}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+            >
+              <div className="grid gap-1.5">
+                <Label htmlFor="followup_lead_days">
+                  Avisar com quantos dias de antecedência
+                </Label>
+                <Input
+                  id="followup_lead_days"
+                  name="followup_lead_days"
+                  type="number"
+                  min={0}
+                  defaultValue={settings.followup_lead_days ?? "3"}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
+              </div>
+            </ActionForm>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-1.5">
-            Resumo do dia por WhatsApp
-            <InfoTip>
-              Enviado todo dia às 7h da manhã, só quando estiver ativado, para o
-              mesmo WhatsApp do resumo acima. Em modo de teste, vai para o
-              número de teste.
-            </InfoTip>
-          </CardTitle>
-          <CardDescription>
-            Toda manhã, o essencial do dia: consultas, urgências pendentes e
-            encaixes em aberto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            action={saveSettings}
-            key={`ds-${settings.daily_summary_enabled ?? ""}`}
-            className="grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2"
-          >
-            <div className="grid gap-1.5">
-              <Label htmlFor="daily_summary_enabled">Resumo do dia</Label>
-              <FormSelect
-                id="daily_summary_enabled"
-                name="daily_summary_enabled"
-                defaultValue={settings.daily_summary_enabled ?? "false"}
-                options={[
-                  { value: "false", label: "Desativado" },
-                  { value: "true", label: "Ativado" },
-                ]}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <Button type="submit">Salvar</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-1.5">
+              Resumo do dia por WhatsApp
+              <InfoTip>
+                Enviado todo dia às 7h da manhã, só quando estiver ativado,
+                para o mesmo WhatsApp do resumo acima. Em modo de teste, vai
+                para o número de teste.
+              </InfoTip>
+            </CardTitle>
+            <CardDescription>
+              Toda manhã, o essencial do dia: consultas, urgências pendentes e
+              encaixes em aberto.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ActionForm
+              action={saveSettings}
+              successMessage="Configuração salva ✓"
+              key={`ds-${settings.daily_summary_enabled ?? ""}`}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+            >
+              <div className="grid gap-1.5">
+                <Label htmlFor="daily_summary_enabled">Resumo do dia</Label>
+                <FormSelect
+                  id="daily_summary_enabled"
+                  name="daily_summary_enabled"
+                  defaultValue={settings.daily_summary_enabled ?? "false"}
+                  options={[
+                    { value: "false", label: "Desativado" },
+                    { value: "true", label: "Ativado" },
+                  ]}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
+              </div>
+            </ActionForm>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

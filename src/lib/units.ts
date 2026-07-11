@@ -64,6 +64,25 @@ export function parseUnitFromTitle(title: string | null | undefined): UnitId | n
   return null;
 }
 
+const FREE_TEXT_PATTERNS: Array<[RegExp, UnitId]> = [
+  [/crd/i, "CRD"],
+  [/s[aã]o\s*francisco|\bsfa?\b/i, "SFA"],
+  [/einstein/i, "EINSTEIN"],
+];
+
+/**
+ * Reconhece a unidade a partir de texto livre (ex.: campo "unidade" do
+ * Sheets, digitado por alguém) — mais tolerante que parseUnitFromTitle, que
+ * exige o prefixo "[XXX]" do Calendar.
+ */
+export function matchUnitFreeText(text: string | null | undefined): UnitId | null {
+  if (!text) return null;
+  for (const [pattern, unit] of FREE_TEXT_PATTERNS) {
+    if (pattern.test(text)) return unit;
+  }
+  return null;
+}
+
 export function stripUnitPrefix(title: string | null | undefined): string {
   if (!title) return "";
   for (const [pattern] of PREFIX_PATTERNS) {

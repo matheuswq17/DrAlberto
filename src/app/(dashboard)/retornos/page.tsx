@@ -5,7 +5,10 @@ import {
   followUpLight,
 } from "@/lib/followup-light";
 import { addFollowUp, setFollowUpStatus } from "./actions";
+import { ActionForm } from "@/components/action-form";
+import { EmptyState } from "@/components/empty-state";
 import { StatusBadge, type StatusSemantic } from "@/components/status-badge";
+import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/page-header";
 import {
   Table,
   TableBody,
@@ -24,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { InboxIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -62,23 +67,21 @@ export default async function RetornosPage() {
   );
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">Fila de retorno</h1>
-        <p className="text-sm text-muted-foreground">
-          Pacientes de biópsia/drenagem/procedimento que precisam voltar. O
-          lembrete por WhatsApp sai automaticamente quando a data se aproxima
-          (job diário do worker).
-        </p>
-      </div>
+    <div className="grid gap-6 animate-in fade-in duration-200">
+      <PageHeader
+        eyebrow="Retornos"
+        title="Fila de retorno"
+        description="Pacientes de biópsia/drenagem/procedimento que precisam voltar. O lembrete por WhatsApp sai automaticamente quando a data se aproxima (job diário do worker)."
+      />
 
       <Card>
         <CardHeader>
           <CardTitle>Adicionar retorno</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
+          <ActionForm
             action={addFollowUp}
+            successMessage="Paciente adicionado à fila de retorno ✓"
             className="grid grid-cols-2 items-end gap-3 lg:grid-cols-6"
           >
             <div className="grid gap-1.5">
@@ -87,26 +90,41 @@ export default async function RetornosPage() {
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="phone">WhatsApp</Label>
-              <Input id="phone" name="phone" placeholder="62999990000" required />
+              <Input
+                id="phone"
+                name="phone"
+                placeholder="62999990000"
+                required
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="procedure">Procedimento</Label>
-              <Input id="procedure" name="procedure" placeholder="biópsia" required />
+              <Input
+                id="procedure"
+                name="procedure"
+                placeholder="biópsia"
+                required
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="procedure_date">Data do procedimento</Label>
-              <Input id="procedure_date" name="procedure_date" type="date" required />
+              <Input
+                id="procedure_date"
+                name="procedure_date"
+                type="date"
+                required
+              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="due_date">Retorno previsto</Label>
               <Input id="due_date" name="due_date" type="date" required />
             </div>
-            <Button type="submit">Adicionar</Button>
+            <SubmitButton pendingLabel="Adicionando…">Adicionar</SubmitButton>
             <div className="col-span-2 grid gap-1.5 lg:col-span-6">
               <Label htmlFor="notes">Observações (opcional)</Label>
               <Input id="notes" name="notes" />
             </div>
-          </form>
+          </ActionForm>
         </CardContent>
       </Card>
 
@@ -155,7 +173,7 @@ function FollowUpTable({
   todayKey?: string;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhum retorno aqui.</p>;
+    return <EmptyState icon={InboxIcon}>Nenhum retorno aqui.</EmptyState>;
   }
   return (
     <Table>

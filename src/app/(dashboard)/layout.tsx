@@ -2,8 +2,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOpenUrgencyCount } from "@/lib/urgency-count";
 import { logout } from "@/app/login/actions";
-import { NavLinks } from "@/components/nav-links";
-import { Button } from "@/components/ui/button";
+import { DashboardShell } from "@/components/dashboard-shell";
+
+const ROLE_LABELS: Record<string, string> = {
+  medico: "Médico",
+  secretaria: "Secretária",
+};
 
 export default async function DashboardLayout({
   children,
@@ -22,29 +26,13 @@ export default async function DashboardLayout({
   ]);
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-6">
-            <span className="text-sm font-semibold whitespace-nowrap">
-              Dr. Alberto Rassi
-            </span>
-            <NavLinks urgencyCount={urgencyCount} />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
-              {profile?.name ?? user.email}
-              {profile?.role === "medico" ? " · médico" : profile?.role === "secretaria" ? " · secretária" : ""}
-            </span>
-            <form action={logout}>
-              <Button variant="outline" size="sm" type="submit">
-                Sair
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-    </div>
+    <DashboardShell
+      urgencyCount={urgencyCount}
+      profileName={profile?.name ?? user.email ?? "Conta"}
+      roleLabel={profile?.role ? ROLE_LABELS[profile.role] ?? null : null}
+      logoutAction={logout}
+    >
+      {children}
+    </DashboardShell>
   );
 }

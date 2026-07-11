@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { ActionState } from "@/lib/action-state";
 import { createClient } from "@/lib/supabase/server";
 import { sendWhatsAppMessage } from "@/lib/evolution";
 import { offerMessage, type FreedSlotRow, type WaitingRow } from "@/lib/reschedule";
@@ -15,7 +16,10 @@ async function authed() {
   return { supabase, user };
 }
 
-export async function addToWaitingList(formData: FormData) {
+export async function addToWaitingList(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   const { supabase, user } = await authed();
   const preferred = String(formData.get("preferred_unit") ?? "");
   const { error } = await supabase.from("waiting_list").insert({
@@ -27,8 +31,9 @@ export async function addToWaitingList(formData: FormData) {
     notes: String(formData.get("notes") ?? "").trim() || null,
     created_by: user.id,
   });
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false, error: error.message };
   revalidatePath("/encaixes");
+  return { ok: true };
 }
 
 export async function removeFromWaitingList(formData: FormData) {

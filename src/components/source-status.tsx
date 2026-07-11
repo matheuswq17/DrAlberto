@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckIcon } from "lucide-react";
 import type { SourceWarning } from "@/lib/today";
 
 // Avisos de fonte de dados (âmbar = atenção): distinguem "falta configurar"
@@ -25,7 +26,10 @@ export function SourceWarnings({ warnings }: { warnings: SourceWarning[] }) {
           {w.href && (
             <>
               {" "}
-              <Link href={w.href} className="font-medium underline">
+              <Link
+                href={w.href}
+                className="font-medium text-primary underline"
+              >
                 Abrir configurações →
               </Link>
             </>
@@ -50,8 +54,9 @@ export function ReadOkStamp({
     timeZone: "America/Sao_Paulo",
   }).format(new Date(readAt));
   return (
-    <p className="text-xs text-muted-foreground">
-      ✓ {label} às {time}.
+    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <CheckIcon className="size-3.5 shrink-0 text-status-ok" aria-hidden="true" />
+      {label} às {time}.
     </p>
   );
 }

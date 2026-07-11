@@ -5,7 +5,9 @@ import {
   suspectRowsWarning,
   type SourceWarning,
 } from "@/lib/today";
+import { EmptyState } from "@/components/empty-state";
 import { FunnelChart } from "@/components/funnel-chart";
+import { PageHeader } from "@/components/page-header";
 import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import {
   Card,
@@ -22,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ListXIcon, MessageSquareIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -49,23 +52,21 @@ export default async function FunilPage() {
   const readAt = new Date().toISOString();
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">Funil FAQ → agendamento</h1>
-        <p className="text-sm text-muted-foreground">
-          Quantas conversas de dúvida viraram consulta, e o que as pessoas mais
-          perguntam sem marcar.
-        </p>
-      </div>
+    <div className="grid gap-6 animate-in fade-in duration-200">
+      <PageHeader
+        eyebrow="Funil"
+        title="Funil FAQ → agendamento"
+        description="Quantas conversas de dúvida viraram consulta, e o que as pessoas mais perguntam sem marcar."
+      />
 
       <SourceWarnings warnings={warnings} />
 
       {metrics && metrics.totalLeads === 0 && (
         <Card>
           <CardContent className="grid gap-2 py-8 text-center">
-            <p className="text-sm text-muted-foreground">
+            <EmptyState icon={MessageSquareIcon} className="justify-center">
               Nenhuma conversa registrada pelo bot ainda.
-            </p>
+            </EmptyState>
             <ReadOkStamp readAt={readAt} label="Leitura da planilha OK" />
           </CardContent>
         </Card>
@@ -147,9 +148,7 @@ function QuestionTable({
   showConverted?: boolean;
 }) {
   if (rows.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">Nada registrado ainda.</p>
-    );
+    return <EmptyState icon={ListXIcon}>Nada registrado ainda.</EmptyState>;
   }
   return (
     <Table>

@@ -5,16 +5,25 @@ import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import { StatusBadge, type StatusSemantic } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { matchUnitFreeText, UNIT_COLOR, UNIT_SHORT_LABELS } from "@/lib/units";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import {
+  CheckCircle2Icon,
+  CircleAlertIcon,
+  EyeIcon,
+  type LucideIcon,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 const STATUS_BADGE: Record<
   UrgencyStatus,
-  { label: string; semantic: StatusSemantic }
+  { label: string; semantic: StatusSemantic; icon: LucideIcon }
 > = {
-  aberta: { label: "Aberta", semantic: "urgent" },
-  vista: { label: "Vista", semantic: "warning" },
-  resolvida: { label: "Resolvida", semantic: "ok" },
+  aberta: { label: "Aberta", semantic: "urgent", icon: CircleAlertIcon },
+  vista: { label: "Vista", semantic: "warning", icon: EyeIcon },
+  resolvida: { label: "Resolvida", semantic: "ok", icon: CheckCircle2Icon },
 };
 
 export default async function UrgenciasPage() {
@@ -23,19 +32,17 @@ export default async function UrgenciasPage() {
   const abertas = items.filter((i) => i.status === "aberta").length;
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">Urgências</h1>
-        <p className="text-sm text-muted-foreground">
-          Triagens que o bot marcou como urgentes. Este painel é consultado
-          quando você quiser — nada aqui dispara notificação para o médico.
-        </p>
-      </div>
+    <div className="grid gap-6 animate-in fade-in duration-200">
+      <PageHeader
+        eyebrow="Urgências"
+        title="Urgências"
+        description="Triagens que o bot marcou como urgentes. Este painel é consultado quando você quiser — nada aqui dispara notificação para o médico."
+      />
 
       <SourceWarnings warnings={warnings} />
 
       {abertas > 0 && (
-        <p className="text-sm font-medium">
+        <p className="text-sm font-medium text-status-urgent-foreground">
           {abertas} urgência{abertas > 1 ? "s" : ""} sem revisão.
         </p>
       )}
@@ -44,9 +51,9 @@ export default async function UrgenciasPage() {
         sheetsOk ? (
           <Card>
             <CardContent className="grid gap-2 py-8 text-center">
-              <p className="text-sm text-muted-foreground">
+              <EmptyState icon={CheckCircle2Icon} className="justify-center">
                 Nenhuma urgência registrada pelo bot.
-              </p>
+              </EmptyState>
               <ReadOkStamp readAt={readAt} label="Leitura da planilha OK" />
             </CardContent>
           </Card>
@@ -60,13 +67,31 @@ export default async function UrgenciasPage() {
           <div className="grid gap-3">
             {items.map((item) => {
               const badge = STATUS_BADGE[item.status];
+              const BadgeIcon = badge.icon;
+              const unit = matchUnitFreeText(item.lead.unidade);
               return (
-                <Card key={item.key}>
+                <Card
+                  key={item.key}
+                  className={
+                    item.status === "aberta"
+                      ? "border-status-urgent/30"
+                      : undefined
+                  }
+                >
                   <CardContent className="flex flex-wrap items-start justify-between gap-4 py-4">
                     <div className="grid gap-1">
-                      <p className="text-sm font-medium">
+                      <p className="flex items-center gap-2 text-sm font-medium">
+                        {unit && (
+                          <span
+                            className={`size-2.5 shrink-0 rounded-full ${UNIT_COLOR[unit].dot}`}
+                            title={UNIT_SHORT_LABELS[unit]}
+                            aria-label={UNIT_SHORT_LABELS[unit]}
+                            role="img"
+                          />
+                        )}
                         {item.lead.name || "(sem nome)"}
                         <StatusBadge semantic={badge.semantic} className="ml-2">
+                          <BadgeIcon aria-hidden="true" />
                           {badge.label}
                         </StatusBadge>
                       </p>
