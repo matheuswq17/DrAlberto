@@ -8,6 +8,7 @@ import {
 } from "@/lib/availability";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
 import { isGoogleConfigured, type SourceWarning } from "@/lib/today";
+import { perfTime } from "@/lib/perf";
 
 export interface NextSlotsResult {
   units: Array<{
@@ -64,7 +65,7 @@ export async function getNextSlots(
     });
   } else {
     try {
-      const events = await listEvents(now, horizon);
+      const events = await perfTime("google-calendar (next-slots)", listEvents(now, horizon));
       busy = events
         .filter((e) => !e.allDay)
         .map((e) => ({ start: new Date(e.start), end: new Date(e.end) }));

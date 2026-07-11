@@ -1,6 +1,7 @@
 import { listEvents, type CalendarEvent } from "@/lib/google/calendar";
 import { fetchLeads, type Lead } from "@/lib/google/sheets";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
+import { perfTime } from "@/lib/perf";
 
 // Painel "Hoje" (func. 1): agenda do dia consolidada + ficha estruturada por
 // paciente, cruzando o evento do Calendar com a linha do lead no Sheets.
@@ -104,41 +105,62 @@ export async function getTodayAgenda(now = new Date()): Promise<TodayAgenda> {
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
 
-  let events: CalendarEvent[] = [];
-  if (!configured.calendar) {
-    warnings.push({
-      kind: "config",
-      text: "Google Calendar não configurado — preencha GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 e GOOGLE_CALENDAR_ID no .env.",
-    });
-  } else {
-    try {
-      events = await listEvents(dayStart, dayEnd);
-      calendarOk = true;
-    } catch (err) {
-      warnings.push({
-        kind: "erro",
-        text: `Leitura do Google Calendar falhou: ${(err as Error).message}`,
-      });
-    }
-  }
+  // Calendar e Sheets são fontes independentes — buscadas em paralelo, cada
+  // uma com seu próprio tratamento de erro (uma falhar não afeta a outra).
+  const [calendarResult, sheetsResult] = await Promise.all([
+    (async (): Promise<{ events: CalendarEvent[]; warning?: SourceWarning }> => {
+      if (!configured.calendar) {
+        return {
+          events: [],
+          warning: {
+            kind: "config",
+            text: "Google Calendar não configurado — preencha GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 e GOOGLE_CALENDAR_ID no .env.",
+          },
+        };
+      }
+      try {
+        return { events: await perfTime("google-calendar (today)", listEvents(dayStart, dayEnd)) };
+      } catch (err) {
+        return {
+          events: [],
+          warning: {
+            kind: "erro",
+            text: `Leitura do Google Calendar falhou: ${(err as Error).message}`,
+          },
+        };
+      }
+    })(),
+    (async (): Promise<{ leads: Lead[]; warning?: SourceWarning }> => {
+      if (!configured.sheets) {
+        return {
+          leads: [],
+          warning: {
+            kind: "config",
+            text: "Google Sheets não configurado (fichas sem dados do bot) — preencha GOOGLE_SHEETS_ID no .env.",
+          },
+        };
+      }
+      try {
+        return { leads: await perfTime("google-sheets", fetchLeads()) };
+      } catch (err) {
+        return {
+          leads: [],
+          warning: {
+            kind: "erro",
+            text: `Leitura do Google Sheets falhou (fichas sem dados do bot): ${(err as Error).message}`,
+          },
+        };
+      }
+    })(),
+  ]);
 
-  let leads: Lead[] = [];
-  if (!configured.sheets) {
-    warnings.push({
-      kind: "config",
-      text: "Google Sheets não configurado (fichas sem dados do bot) — preencha GOOGLE_SHEETS_ID no .env.",
-    });
-  } else {
-    try {
-      leads = await fetchLeads();
-      sheetsOk = true;
-    } catch (err) {
-      warnings.push({
-        kind: "erro",
-        text: `Leitura do Google Sheets falhou (fichas sem dados do bot): ${(err as Error).message}`,
-      });
-    }
-  }
+  const events = calendarResult.events;
+  calendarOk = !calendarResult.warning;
+  if (calendarResult.warning) warnings.push(calendarResult.warning);
+
+  const leads = sheetsResult.leads;
+  sheetsOk = !sheetsResult.warning;
+  if (sheetsResult.warning) warnings.push(sheetsResult.warning);
 
   const entries: PatientCard[] = events
     .filter((e) => !e.allDay)

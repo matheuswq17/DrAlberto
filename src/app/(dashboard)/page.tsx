@@ -22,6 +22,8 @@ import { spDayKey } from "@/lib/agenda";
 import { followUpLight } from "@/lib/followup-light";
 import { UNIT_COLOR, UNIT_SHORT_LABELS, NO_UNIT_COLOR } from "@/lib/units";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/session";
+import { perfTime } from "@/lib/perf";
 import { EmptyState } from "@/components/empty-state";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
@@ -67,16 +69,7 @@ export default async function OverviewPage({
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = user
-    ? await supabase
-        .from("profiles")
-        .select("name, role")
-        .eq("id", user.id)
-        .single()
-    : { data: null };
+  const { profile } = await perfTime("session-validation", getSessionProfile());
 
   const now = new Date();
   const hourNow = Number(
@@ -97,16 +90,17 @@ export default async function OverviewPage({
   const greeting = buildGreeting(hourNow, profile?.name ?? null, profile?.role ?? null);
 
   const [agenda, nextSlots, urgencyCount, radar] = await Promise.all([
-    getTodayAgenda(),
-    getNextSlots(supabase),
-    getOpenUrgencyCount(),
-    getRadarData(supabase),
+    perfTime("agenda-calculation", getTodayAgenda()),
+    perfTime("horarios-livres", getNextSlots(supabase)),
+    perfTime("sinalizacoes-count", getOpenUrgencyCount()),
+    perfTime("encaixes-radar", getRadarData(supabase)),
   ]);
 
   const todayKey = spDayKey(now);
-  const { data: followUps } = await supabase
-    .from("follow_ups")
-    .select("due_date, status");
+  const { data: followUps } = await perfTime(
+    "retornos-query",
+    supabase.from("follow_ups").select("due_date, status")
+  );
   const activeFollowUps = (followUps ?? []).filter(
     (f) => !["concluido", "cancelado"].includes(f.status)
   );

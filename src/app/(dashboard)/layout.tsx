@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/session";
 import { getOpenUrgencyCount } from "@/lib/urgency-count";
 import { logout } from "@/app/login/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -14,16 +14,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const [{ data: profile }, urgencyCount] = await Promise.all([
-    supabase.from("profiles").select("name, role").eq("id", user.id).single(),
+  const [{ user, profile }, urgencyCount] = await Promise.all([
+    getSessionProfile(),
     getOpenUrgencyCount(),
   ]);
+  if (!user) redirect("/login");
 
   return (
     <DashboardShell
