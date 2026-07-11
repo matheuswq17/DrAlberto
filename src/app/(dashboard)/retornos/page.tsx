@@ -7,9 +7,9 @@ import {
 import { addFollowUp, setFollowUpStatus } from "./actions";
 import { ActionForm } from "@/components/action-form";
 import { EmptyState } from "@/components/empty-state";
+import { PhoneReveal } from "@/components/phone-reveal";
 import { StatusBadge, type StatusSemantic } from "@/components/status-badge";
 import { SubmitButton } from "@/components/submit-button";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -209,7 +209,7 @@ function FollowUpTable({
                 {r.patient_name}
               </span>
               <span className="block text-xs text-muted-foreground">
-                {r.phone}
+                <PhoneReveal phone={r.phone} />
                 {r.notes ? ` · ${r.notes}` : ""}
               </span>
             </TableCell>
@@ -241,6 +241,12 @@ function FollowUpTable({
   );
 }
 
+const PENDING_LABELS: Record<string, string> = {
+  agendado: "Agendando…",
+  cancelado: "Cancelando…",
+  concluido: "Concluindo…",
+};
+
 function StatusButton({
   id,
   status,
@@ -256,9 +262,13 @@ function StatusButton({
     <form action={setFollowUpStatus}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
-      <Button variant={ghost ? "ghost" : "outline"} size="sm" type="submit">
+      <SubmitButton
+        variant={ghost ? "ghost" : "outline"}
+        size="sm"
+        pendingLabel={PENDING_LABELS[status] ?? "Salvando…"}
+      >
         {label}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getUrgencies, type UrgencyStatus } from "@/lib/urgencies";
 import { setUrgencyStatus } from "./actions";
+import { PhoneReveal } from "@/components/phone-reveal";
 import { ReadOkStamp, SourceWarnings } from "@/components/source-status";
 import { StatusBadge, type StatusSemantic } from "@/components/status-badge";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { matchUnitFreeText, UNIT_COLOR, UNIT_SHORT_LABELS } from "@/lib/units";
 import { EmptyState } from "@/components/empty-state";
@@ -99,7 +100,7 @@ export default async function UrgenciasPage() {
                         {item.lead.createdAt && (
                           <>Registrado: {item.lead.createdAt} · </>
                         )}
-                        Telefone: {item.lead.phone || "—"}
+                        Telefone: <PhoneReveal phone={item.lead.phone} />
                       </p>
                       {(item.lead.sintomas || item.lead.motivo) && (
                         <p className="text-xs">
@@ -112,27 +113,35 @@ export default async function UrgenciasPage() {
                         <form action={setUrgencyStatus}>
                           <input type="hidden" name="key" value={item.key} />
                           <input type="hidden" name="status" value="vista" />
-                          <Button variant="outline" size="sm" type="submit">
+                          <SubmitButton
+                            variant="outline"
+                            size="sm"
+                            pendingLabel="Marcando…"
+                          >
                             Marcar como vista
-                          </Button>
+                          </SubmitButton>
                         </form>
                       )}
                       {item.status !== "resolvida" && (
                         <form action={setUrgencyStatus}>
                           <input type="hidden" name="key" value={item.key} />
                           <input type="hidden" name="status" value="resolvida" />
-                          <Button size="sm" type="submit">
+                          <SubmitButton size="sm" pendingLabel="Marcando…">
                             Marcar como resolvida
-                          </Button>
+                          </SubmitButton>
                         </form>
                       )}
                       {item.status === "resolvida" && (
                         <form action={setUrgencyStatus}>
                           <input type="hidden" name="key" value={item.key} />
                           <input type="hidden" name="status" value="aberta" />
-                          <Button variant="ghost" size="sm" type="submit">
+                          <SubmitButton
+                            variant="ghost"
+                            size="sm"
+                            pendingLabel="Reabrindo…"
+                          >
                             Reabrir
-                          </Button>
+                          </SubmitButton>
                         </form>
                       )}
                     </div>

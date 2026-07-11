@@ -2,6 +2,8 @@
 // tela Hoje sempre mostrou, extraído para ser reutilizado pelo modal de
 // detalhe da Agenda (Semana/Mês). Componente puro: funciona em server e client.
 
+import { PhoneReveal } from "@/components/phone-reveal";
+
 export interface LeadFactsData {
   motivo: string;
   examePendente: string;
@@ -40,7 +42,9 @@ export function LeadFacts({ lead }: { lead: LeadFactsData | null }) {
       {lead.phone && (
         <div>
           <dt className="inline font-medium">Telefone: </dt>
-          <dd className="inline">{lead.phone}</dd>
+          <dd className="inline">
+            <PhoneReveal phone={lead.phone} />
+          </dd>
         </div>
       )}
     </dl>

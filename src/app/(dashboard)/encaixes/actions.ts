@@ -60,6 +60,14 @@ export async function approveSuggestion(formData: FormData) {
 
   const s = slot as FreedSlotRow;
   const p = patient as WaitingRow;
+
+  // Idempotência contra clique duplo/concorrente: se a vaga já saiu de
+  // "aberta" (outra submissão já aprovou/ignorou), não reenvia a oferta.
+  if (s.status !== "aberta") {
+    revalidatePath("/encaixes");
+    return;
+  }
+
   const unitLabel = s.unit ? UNIT_LABELS[s.unit as UnitId] : "a combinar";
 
   const result = await sendWhatsAppMessage({

@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/page-header";
 import { ALL_UNITS, UNIT_LABELS, type UnitId } from "@/lib/units";
 import { addScheduleRow, deleteScheduleRow, saveSettings } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -104,9 +103,13 @@ export default async function ConfigPage() {
                   <TableCell>
                     <form action={deleteScheduleRow}>
                       <input type="hidden" name="id" value={row.id} />
-                      <Button variant="ghost" size="sm" type="submit">
+                      <SubmitButton
+                        variant="ghost"
+                        size="sm"
+                        pendingLabel="Removendo…"
+                      >
                         Remover
-                      </Button>
+                      </SubmitButton>
                     </form>
                   </TableCell>
                 </TableRow>
@@ -169,7 +172,7 @@ export default async function ConfigPage() {
                 Tempo reservado para cada paciente.
               </p>
             </div>
-            <Button type="submit">Adicionar</Button>
+            <SubmitButton pendingLabel="Adicionando…">Adicionar</SubmitButton>
           </form>
         </CardContent>
       </Card>

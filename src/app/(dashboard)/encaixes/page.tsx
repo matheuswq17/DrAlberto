@@ -11,9 +11,9 @@ import {
 import { ActionForm } from "@/components/action-form";
 import { EmptyState } from "@/components/empty-state";
 import { FormSelect } from "@/components/form-select";
+import { PhoneReveal } from "@/components/phone-reveal";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmitButton } from "@/components/submit-button";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -90,7 +90,7 @@ export default async function EncaixesPage() {
                   {candidate ? (
                     <p className="text-xs text-muted-foreground">
                       Próximo da fila: <strong>{candidate.patient_name}</strong>{" "}
-                      ({candidate.phone}
+                      (<PhoneReveal phone={candidate.phone} />
                       {candidate.preferred_unit
                         ? `, prefere ${unitLabel(candidate.preferred_unit)}`
                         : ""}
@@ -112,9 +112,9 @@ export default async function EncaixesPage() {
                           name="waiting_id"
                           value={candidate.id}
                         />
-                        <Button size="sm" type="submit">
+                        <SubmitButton size="sm" pendingLabel="Enviando…">
                           Aprovar e enviar WhatsApp
-                        </Button>
+                        </SubmitButton>
                       </form>
                       <form action={rejectSuggestion}>
                         <input type="hidden" name="slot_id" value={slot.id} />
@@ -123,17 +123,21 @@ export default async function EncaixesPage() {
                           name="waiting_id"
                           value={candidate.id}
                         />
-                        <Button variant="outline" size="sm" type="submit">
+                        <SubmitButton
+                          variant="outline"
+                          size="sm"
+                          pendingLabel="Pulando…"
+                        >
                           Pular paciente
-                        </Button>
+                        </SubmitButton>
                       </form>
                     </>
                   )}
                   <form action={ignoreSlot}>
                     <input type="hidden" name="slot_id" value={slot.id} />
-                    <Button variant="ghost" size="sm" type="submit">
+                    <SubmitButton variant="ghost" size="sm" pendingLabel="Ignorando…">
                       Ignorar vaga
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               </div>
@@ -222,7 +226,7 @@ export default async function EncaixesPage() {
                         </StatusBadge>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {w.phone}
+                        <PhoneReveal phone={w.phone} />
                         {w.preferred_unit
                           ? ` · prefere ${unitLabel(w.preferred_unit)}`
                           : ""}
@@ -232,9 +236,13 @@ export default async function EncaixesPage() {
                     {w.status !== "removido" && (
                       <form action={removeFromWaitingList}>
                         <input type="hidden" name="id" value={w.id} />
-                        <Button variant="ghost" size="sm" type="submit">
+                        <SubmitButton
+                          variant="ghost"
+                          size="sm"
+                          pendingLabel="Removendo…"
+                        >
                           Remover
-                        </Button>
+                        </SubmitButton>
                       </form>
                     )}
                   </div>

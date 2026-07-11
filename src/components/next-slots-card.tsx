@@ -52,9 +52,13 @@ export async function NextSlotsCard() {
       </>
     );
   } catch (err) {
+    // Detalhe técnico só no log do servidor — a interface mostra mensagem
+    // segura, sem expor erro crú de integração para quem está usando o painel.
+    console.error("NextSlotsCard: falha ao calcular horários livres:", err);
     content = (
       <p className="text-sm text-destructive">
-        Erro ao calcular horários: {(err as Error).message}
+        Não foi possível calcular os horários livres agora. Tente novamente em
+        alguns minutos.
       </p>
     );
   }
