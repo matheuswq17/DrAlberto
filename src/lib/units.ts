@@ -98,3 +98,24 @@ const CONSULTA_PREFIX = /^consulta\s*[-–—:]\s*/i;
 export function extractPatientLabel(title: string | null | undefined): string {
   return stripUnitPrefix(title).replace(CONSULTA_PREFIX, "").trim();
 }
+
+/** Prefixo de título usado ao CRIAR evento (mão inversa de parseUnitFromTitle). */
+export const UNIT_TITLE_PREFIX: Record<UnitId, string> = {
+  CRD: "[CRD]",
+  SFA: "[SF]", // convenção real é [SF], não [SFA] — ver parseUnitFromTitle acima
+  EINSTEIN: "[EINSTEIN]",
+};
+
+/**
+ * Título do evento para o fluxo de "Marcar procedimento" (único ponto do
+ * projeto que ESCREVE no Calendar). Nome do paciente primeiro, procedimento
+ * como sufixo — assim extractPatientLabel (que só remove o prefixo de
+ * unidade) continua mostrando um rótulo com o nome do paciente na frente.
+ */
+export function buildEventTitle(
+  unit: UnitId,
+  patientName: string,
+  procedureName: string
+): string {
+  return `${UNIT_TITLE_PREFIX[unit]} ${patientName} - ${procedureName}`;
+}

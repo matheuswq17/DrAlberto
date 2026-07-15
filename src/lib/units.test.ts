@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseUnitFromTitle, stripUnitPrefix } from "./units";
+import { parseUnitFromTitle, stripUnitPrefix, buildEventTitle } from "./units";
 
 describe("parseUnitFromTitle", () => {
   it("mapeia [CRD] para CRD", () => {
@@ -49,5 +49,19 @@ describe("stripUnitPrefix", () => {
 
   it("mantém título sem prefixo", () => {
     expect(stripUnitPrefix("Reunião interna")).toBe("Reunião interna");
+  });
+});
+
+describe("buildEventTitle", () => {
+  it("monta o título com o prefixo correto por unidade", () => {
+    expect(buildEventTitle("CRD", "Maria Souza", "PAAF")).toBe(
+      "[CRD] Maria Souza - PAAF"
+    );
+    expect(buildEventTitle("SFA", "João Pereira", "Drenagem")).toBe(
+      "[SF] João Pereira - Drenagem"
+    );
+    expect(buildEventTitle("EINSTEIN", "Ana Lima", "Biópsia óssea")).toBe(
+      "[EINSTEIN] Ana Lima - Biópsia óssea"
+    );
   });
 });
