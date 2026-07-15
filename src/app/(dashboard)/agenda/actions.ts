@@ -89,6 +89,12 @@ export async function bookProcedure(
     .single();
 
   if (insertError || !booking) {
+    // Evento já existe no Calendar mas ficou órfão no painel — detalhe
+    // técnico só no log do servidor, para reconciliar manualmente depois.
+    console.error(
+      `bookProcedure: evento ${eventId} criado no Calendar mas insert em procedure_bookings falhou:`,
+      insertError?.message
+    );
     return {
       ok: false,
       error: `Evento criado no Calendar (id ${eventId}), mas falhou ao gravar no painel: ${insertError?.message ?? "erro desconhecido"}. Não marque de novo sem checar o Calendar — avise o suporte.`,
