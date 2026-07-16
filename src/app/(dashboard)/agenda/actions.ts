@@ -84,6 +84,7 @@ export async function bookProcedure(
       price: value.price,
       calendar_event_id: eventId,
       booked_by: user.id,
+      bot_paused: true,
     })
     .select("id")
     .single();
