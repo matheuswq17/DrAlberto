@@ -8,8 +8,11 @@ import {
   spMidnight,
   weekDaysOf,
 } from "@/lib/agenda";
+import { createClient } from "@/lib/supabase/server";
+import { getActiveProcedures, getPendingPaymentEventIds } from "@/lib/procedures";
 import { getTodayAgenda } from "@/lib/today";
 import { cn } from "@/lib/utils";
+import { bookProcedure } from "./actions";
 import { AgendaLegend } from "@/components/agenda-legend";
 import { AgendaMonth } from "@/components/agenda-month";
 import { AgendaWeek, type WeekDayCol } from "@/components/agenda-week";
@@ -152,6 +155,8 @@ export default async function AgendaPage({
 
 async function DayView() {
   const agenda = await getTodayAgenda();
+  const supabase = await createClient();
+  const pendingEventIds = await getPendingPaymentEventIds(supabase);
   // Intl retorna tudo em minúsculas; maiusculizar só a 1ª letra (pt-BR usa
   // minúscula em "de julho" etc. — text-transform: capitalize erraria isso).
   const rawLabel = new Intl.DateTimeFormat("pt-BR", {
@@ -228,6 +233,11 @@ async function DayView() {
                               sinalização
                             </StatusBadge>
                           )}
+                          {pendingEventIds.has(event.id) && (
+                            <StatusBadge semantic="warning" className="ml-2">
+                              pagamento pendente
+                            </StatusBadge>
+                          )}
                         </p>
                         <LeadFacts lead={lead} />
                       </div>
@@ -261,6 +271,11 @@ async function WeekView({
     dayKeys[0],
     dayKeys[6]
   );
+  const supabase = await createClient();
+  const [pendingEventIds, procedures] = await Promise.all([
+    getPendingPaymentEventIds(supabase),
+    getActiveProcedures(supabase),
+  ]);
   const { startHour, endHour } = hourRangeOf(entries);
 
   const days: WeekDayCol[] = dayKeys.map((key) => ({
@@ -306,6 +321,9 @@ async function WeekView({
                 entries={entries}
                 startHour={startHour}
                 endHour={endHour}
+                pendingEventIds={pendingEventIds}
+                procedures={procedures}
+                bookAction={bookProcedure}
               />
               <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
             </>
@@ -336,6 +354,8 @@ async function MonthView({
     cells[0].key,
     cells[cells.length - 1].key
   );
+  const supabase = await createClient();
+  const pendingEventIds = await getPendingPaymentEventIds(supabase);
 
   const [y, m] = anchor.split("-").map(Number);
   const prevMonth = `${new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10)}`;
@@ -361,7 +381,12 @@ async function MonthView({
       {calendarOk ? (
         <>
           <AgendaLegend showNoUnit={entries.some((e) => e.unit === null)} />
-          <AgendaMonth cells={cells} entries={entries} todayKey={todayKey} />
+          <AgendaMonth
+            cells={cells}
+            entries={entries}
+            todayKey={todayKey}
+            pendingEventIds={pendingEventIds}
+          />
           <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
         </>
       ) : (
