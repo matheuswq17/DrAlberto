@@ -7,6 +7,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import type { ActionState } from "@/lib/action-state";
+import type { ProcedureOption } from "@/lib/procedures";
 import { ALL_UNITS, UNIT_LABELS } from "@/lib/units";
 import { toastManager } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,6 @@ import { FormSelect } from "@/components/form-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/submit-button";
-
-export interface ProcedureOption {
-  id: string;
-  name: string;
-}
 
 export interface BookingSlot {
   dayKey: string; // YYYY-MM-DD
@@ -62,6 +58,8 @@ export function ProcedureBookingDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
+  if (procedures.length === 0) return null;
 
   const selectedProcedure = procedures.find((p) => p.id === procedureId) ?? procedures[0];
   // América/São Paulo é UTC-3 fixo (sem horário de verão desde 2019) — mesma
