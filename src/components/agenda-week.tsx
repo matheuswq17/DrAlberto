@@ -6,9 +6,13 @@
 
 import { useState } from "react";
 import type { AgendaEntry } from "@/lib/agenda";
+import type { ActionState } from "@/lib/action-state";
+import type { ProcedureOption } from "@/lib/procedures";
 import { NO_UNIT_COLOR, UNIT_COLOR } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { AgendaEntryDialog } from "@/components/agenda-entry-dialog";
+import { ProcedureBookingDialog, type BookingSlot } from "@/components/procedure-booking-dialog";
+import { TriangleAlertIcon } from "lucide-react";
 
 const HOUR_PX = 48;
 
@@ -24,13 +28,20 @@ export function AgendaWeek({
   entries,
   startHour,
   endHour,
+  pendingEventIds,
+  procedures,
+  bookAction,
 }: {
   days: WeekDayCol[];
   entries: AgendaEntry[];
   startHour: number;
   endHour: number;
+  pendingEventIds: Set<string>;
+  procedures: ProcedureOption[];
+  bookAction: (prev: ActionState, formData: FormData) => Promise<ActionState>;
 }) {
   const [selected, setSelected] = useState<AgendaEntry | null>(null);
+  const [slot, setSlot] = useState<BookingSlot | null>(null);
 
   const heightPx = (endHour - startHour) * HOUR_PX;
   const hours = Array.from(
@@ -90,13 +101,16 @@ export function AgendaWeek({
                 )}
                 style={{ height: heightPx }}
               >
-                {/* linhas pontilhadas de hora em hora = horários livres */}
+                {/* linhas de hora em hora = horários livres; clicáveis para
+                    marcar um procedimento nesse horário */}
                 {hours.map((h) => (
-                  <div
+                  <button
                     key={h}
-                    aria-hidden
-                    className="absolute inset-x-0 border-t border-dashed border-border/70"
-                    style={{ top: (h - startHour) * HOUR_PX }}
+                    type="button"
+                    onClick={() => setSlot({ dayKey: day.key, hour: h })}
+                    aria-label={`Marcar procedimento às ${h}h em ${day.dayLabel}`}
+                    className="absolute inset-x-0 border-t border-dashed border-border/70 transition-colors hover:bg-accent/40"
+                    style={{ top: (h - startHour) * HOUR_PX, height: HOUR_PX }}
                   />
                 ))}
 
@@ -124,6 +138,12 @@ export function AgendaWeek({
                           ),
                         }}
                       >
+                        {pendingEventIds.has(entry.id) && (
+                          <TriangleAlertIcon
+                            aria-label="Pagamento pendente"
+                            className="absolute top-0.5 right-0.5 size-3 text-status-warning-foreground"
+                          />
+                        )}
                         <span className="block truncate text-xs font-medium text-foreground">
                           {entry.patientLabel || "(sem título)"}
                         </span>
@@ -139,7 +159,17 @@ export function AgendaWeek({
         </div>
       </div>
 
-      <AgendaEntryDialog entry={selected} onClose={() => setSelected(null)} />
+      <AgendaEntryDialog
+        entry={selected}
+        onClose={() => setSelected(null)}
+        paymentPending={selected ? pendingEventIds.has(selected.id) : false}
+      />
+      <ProcedureBookingDialog
+        slot={slot}
+        onClose={() => setSlot(null)}
+        procedures={procedures}
+        action={bookAction}
+      />
     </>
   );
 }
