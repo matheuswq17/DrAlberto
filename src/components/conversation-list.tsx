@@ -31,12 +31,19 @@ export function ConversationList({
   return (
     <div className="grid gap-1 p-2">
       {bookings.map((b) => (
-        <button
+        <div
           key={b.id}
-          type="button"
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(b.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect(b.id);
+            }
+          }}
           className={cn(
-            "grid gap-1 rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-accent",
+            "grid cursor-pointer gap-1 rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-accent",
             selectedId === b.id && "border-primary bg-accent"
           )}
         >
@@ -55,7 +62,7 @@ export function ConversationList({
               </StatusBadge>
             )}
           </div>
-        </button>
+        </div>
       ))}
     </div>
   );

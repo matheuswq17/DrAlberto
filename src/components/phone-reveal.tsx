@@ -30,7 +30,11 @@ export function PhoneReveal({
       {hasPhone && (
         <button
           type="button"
-          onClick={() => setRevealed((r) => !r)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setRevealed((r) => !r);
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
           aria-label={
             revealed
               ? "Ocultar telefone completo"
