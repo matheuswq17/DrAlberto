@@ -131,3 +131,34 @@ export async function resumeBotWebhook(payload: ResumeBotPayload): Promise<Webho
   const { phone } = safePhone(payload.telefone);
   return callWebhook("retomar-bot", { ...payload, telefone: phone });
 }
+
+export interface CancelProcedurePayload {
+  telefone: string;
+  nomePaciente: string;
+  procedimento: string;
+  idAgendamento: string;
+}
+
+export async function cancelProcedureWebhook(
+  payload: CancelProcedurePayload
+): Promise<WebhookResult> {
+  const { phone } = safePhone(payload.telefone);
+  return callWebhook("procedimento-cancelado", { ...payload, telefone: phone });
+}
+
+export interface RescheduleProcedurePayload {
+  telefone: string;
+  nomePaciente: string;
+  procedimento: string;
+  unidade: string;
+  dataHoraInicioNova: string;
+  dataHoraFimNova: string;
+  idAgendamento: string;
+}
+
+export async function rescheduleProcedureWebhook(
+  payload: RescheduleProcedurePayload
+): Promise<WebhookResult> {
+  const { phone } = safePhone(payload.telefone);
+  return callWebhook("procedimento-reagendado", { ...payload, telefone: phone });
+}

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import type { AgendaEntry } from "@/lib/agenda";
 import type { ActionState } from "@/lib/action-state";
-import type { ProcedureOption } from "@/lib/procedures";
+import type { ProcedureOption, ProcedureBookingSummary } from "@/lib/procedures";
 import { NO_UNIT_COLOR, UNIT_COLOR } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { AgendaEntryDialog } from "@/components/agenda-entry-dialog";
@@ -15,6 +15,8 @@ import { ProcedureBookingDialog, type BookingSlot } from "@/components/procedure
 import { TriangleAlertIcon } from "lucide-react";
 
 const HOUR_PX = 48;
+
+type FormAction = (prev: ActionState, formData: FormData) => Promise<ActionState>;
 
 export interface WeekDayCol {
   key: string;
@@ -31,6 +33,9 @@ export function AgendaWeek({
   pendingEventIds,
   procedures,
   bookAction,
+  procedureBookings,
+  cancelAction,
+  rescheduleAction,
 }: {
   days: WeekDayCol[];
   entries: AgendaEntry[];
@@ -38,7 +43,10 @@ export function AgendaWeek({
   endHour: number;
   pendingEventIds: Set<string>;
   procedures: ProcedureOption[];
-  bookAction: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  bookAction: FormAction;
+  procedureBookings?: Map<string, ProcedureBookingSummary>;
+  cancelAction?: FormAction;
+  rescheduleAction?: FormAction;
 }) {
   const [selected, setSelected] = useState<AgendaEntry | null>(null);
   const [slot, setSlot] = useState<BookingSlot | null>(null);
@@ -163,6 +171,9 @@ export function AgendaWeek({
         entry={selected}
         onClose={() => setSelected(null)}
         paymentPending={selected ? pendingEventIds.has(selected.id) : false}
+        procedureBooking={selected ? procedureBookings?.get(selected.id) : undefined}
+        cancelAction={cancelAction}
+        rescheduleAction={rescheduleAction}
       />
       <ProcedureBookingDialog
         slot={slot}

@@ -9,10 +9,14 @@ import {
   weekDaysOf,
 } from "@/lib/agenda";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveProcedures, getPendingPaymentEventIds } from "@/lib/procedures";
+import {
+  getActiveProcedureBookingsByEventId,
+  getActiveProcedures,
+  getPendingPaymentEventIds,
+} from "@/lib/procedures";
 import { getTodayAgenda } from "@/lib/today";
 import { cn } from "@/lib/utils";
-import { bookProcedure } from "./actions";
+import { bookProcedure, cancelProcedure, rescheduleProcedure } from "./actions";
 import { AgendaLegend } from "@/components/agenda-legend";
 import { AgendaMonth } from "@/components/agenda-month";
 import { AgendaWeek, type WeekDayCol } from "@/components/agenda-week";
@@ -272,9 +276,10 @@ async function WeekView({
     dayKeys[6]
   );
   const supabase = await createClient();
-  const [pendingEventIds, procedures] = await Promise.all([
+  const [pendingEventIds, procedures, procedureBookings] = await Promise.all([
     getPendingPaymentEventIds(supabase),
     getActiveProcedures(supabase),
+    getActiveProcedureBookingsByEventId(supabase),
   ]);
   const { startHour, endHour } = hourRangeOf(entries);
 
@@ -324,6 +329,9 @@ async function WeekView({
                 pendingEventIds={pendingEventIds}
                 procedures={procedures}
                 bookAction={bookProcedure}
+                procedureBookings={procedureBookings}
+                cancelAction={cancelProcedure}
+                rescheduleAction={rescheduleProcedure}
               />
               <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
             </>
@@ -355,7 +363,10 @@ async function MonthView({
     cells[cells.length - 1].key
   );
   const supabase = await createClient();
-  const pendingEventIds = await getPendingPaymentEventIds(supabase);
+  const [pendingEventIds, procedureBookings] = await Promise.all([
+    getPendingPaymentEventIds(supabase),
+    getActiveProcedureBookingsByEventId(supabase),
+  ]);
 
   const [y, m] = anchor.split("-").map(Number);
   const prevMonth = `${new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10)}`;
@@ -386,6 +397,9 @@ async function MonthView({
             entries={entries}
             todayKey={todayKey}
             pendingEventIds={pendingEventIds}
+            procedureBookings={procedureBookings}
+            cancelAction={cancelProcedure}
+            rescheduleAction={rescheduleProcedure}
           />
           <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
         </>

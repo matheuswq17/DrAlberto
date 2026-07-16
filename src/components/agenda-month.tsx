@@ -6,6 +6,8 @@
 
 import { useState } from "react";
 import type { AgendaEntry, MonthCell } from "@/lib/agenda";
+import type { ActionState } from "@/lib/action-state";
+import type { ProcedureBookingSummary } from "@/lib/procedures";
 import {
   ALL_UNITS,
   NO_UNIT_COLOR,
@@ -29,16 +31,24 @@ import { ArrowLeftIcon, TriangleAlertIcon } from "lucide-react";
 
 const WEEKDAY_HEADERS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
 
+type FormAction = (prev: ActionState, formData: FormData) => Promise<ActionState>;
+
 export function AgendaMonth({
   cells,
   entries,
   todayKey,
   pendingEventIds,
+  procedureBookings,
+  cancelAction,
+  rescheduleAction,
 }: {
   cells: MonthCell[];
   entries: AgendaEntry[];
   todayKey: string;
   pendingEventIds: Set<string>;
+  procedureBookings?: Map<string, ProcedureBookingSummary>;
+  cancelAction?: FormAction;
+  rescheduleAction?: FormAction;
 }) {
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [selected, setSelected] = useState<AgendaEntry | null>(null);
@@ -155,8 +165,12 @@ export function AgendaMonth({
                   </DialogDescription>
                 </DialogHeader>
                 <EntryDetailBody
+                  key={selected.id}
                   entry={selected}
                   paymentPending={pendingEventIds.has(selected.id)}
+                  procedureBooking={procedureBookings?.get(selected.id)}
+                  cancelAction={cancelAction}
+                  rescheduleAction={rescheduleAction}
                 />
               </>
             ) : (
