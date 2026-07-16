@@ -33,10 +33,12 @@ export function ConversationPanel({
   onMessageSent,
   onPaymentConfirmed,
   onBotPauseToggled,
+  onConversationDeleted,
   sendMessageAction,
   confirmPaymentAction,
   pauseBotAction,
   resumeBotAction,
+  deleteConversationAction,
 }: {
   booking: ConversationBooking;
   messages: MessageRow[];
@@ -44,15 +46,18 @@ export function ConversationPanel({
   onMessageSent: (text: string) => void;
   onPaymentConfirmed: () => void;
   onBotPauseToggled: (paused: boolean) => void;
+  onConversationDeleted: () => void;
   sendMessageAction: FormAction;
   confirmPaymentAction: FormAction;
   pauseBotAction: FormAction;
   resumeBotAction: FormAction;
+  deleteConversationAction: FormAction;
 }) {
   const [sendState, sendFormAction] = useActionState<ActionState, FormData>(sendMessageAction, null);
   const [paymentState, paymentFormAction] = useActionState<ActionState, FormData>(confirmPaymentAction, null);
   const [pauseState, pauseFormAction] = useActionState<ActionState, FormData>(pauseBotAction, null);
   const [resumeState, resumeFormAction] = useActionState<ActionState, FormData>(resumeBotAction, null);
+  const [deleteState, deleteFormAction] = useActionState<ActionState, FormData>(deleteConversationAction, null);
   const formRef = useRef<HTMLFormElement>(null);
   const pendingTextRef = useRef("");
 
@@ -100,6 +105,26 @@ export function ConversationPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeState]);
 
+  useEffect(() => {
+    if (!deleteState) return;
+    if (deleteState.ok) {
+      toastManager.add({ title: deleteState.message ?? "Conversa excluída ✓", type: "success", timeout: 4000 });
+      onConversationDeleted();
+    } else {
+      toastManager.add({ title: deleteState.error, type: "error", timeout: 5000 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deleteState]);
+
+  function confirmDelete(e: React.FormEvent<HTMLFormElement>) {
+    const confirmed = window.confirm(
+      `Excluir a conversa de ${booking.patientName}?\n\n` +
+        "Isso apaga o histórico de mensagens e o registro do procedimento, e libera o bot para esse número. " +
+        "Isso NÃO cancela o evento na agenda — só limpa o histórico de conversa. Essa ação não pode ser desfeita."
+    );
+    if (!confirmed) e.preventDefault();
+  }
+
   return (
     <div className="grid h-full grid-rows-[auto_1fr_auto] gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
@@ -133,6 +158,12 @@ export function ConversationPanel({
               </SubmitButton>
             </form>
           )}
+          <form action={deleteFormAction} onSubmit={confirmDelete}>
+            <input type="hidden" name="booking_id" value={booking.id} />
+            <SubmitButton pendingLabel="Excluindo…" variant="destructive" size="sm">
+              Excluir conversa
+            </SubmitButton>
+          </form>
         </div>
       </div>
 

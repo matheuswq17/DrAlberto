@@ -21,6 +21,7 @@ export function ConversationsView({
   confirmPaymentAction,
   pauseBotAction,
   resumeBotAction,
+  deleteConversationAction,
 }: {
   initialBookings: ConversationBooking[];
   getMessagesAction: (phone: string) => Promise<MessageRow[]>;
@@ -28,6 +29,7 @@ export function ConversationsView({
   confirmPaymentAction: FormAction;
   pauseBotAction: FormAction;
   resumeBotAction: FormAction;
+  deleteConversationAction: FormAction;
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -96,6 +98,13 @@ export function ConversationsView({
     setBookings((prev) => prev.map((b) => (b.id === selected.id ? { ...b, botPaused: paused } : b)));
   }
 
+  function handleConversationDeleted() {
+    if (!selected) return;
+    setBookings((prev) => prev.filter((b) => b.id !== selected.id));
+    setSelectedId(null);
+    setMessages([]);
+  }
+
   return (
     <div className="grid gap-4 lg:h-[calc(100vh-220px)] lg:grid-cols-[320px_1fr]">
       <div className="overflow-y-auto rounded-lg border bg-card">
@@ -110,10 +119,12 @@ export function ConversationsView({
             onMessageSent={handleMessageSent}
             onPaymentConfirmed={handlePaymentConfirmed}
             onBotPauseToggled={handleBotPauseToggled}
+            onConversationDeleted={handleConversationDeleted}
             sendMessageAction={sendMessageAction}
             confirmPaymentAction={confirmPaymentAction}
             pauseBotAction={pauseBotAction}
             resumeBotAction={resumeBotAction}
+            deleteConversationAction={deleteConversationAction}
           />
         ) : (
           <EmptyState icon={MessageCircleIcon}>Selecione um paciente para ver a conversa.</EmptyState>

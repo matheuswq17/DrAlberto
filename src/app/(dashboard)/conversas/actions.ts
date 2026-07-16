@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { ActionState } from "@/lib/action-state";
 import type { MessageRow } from "@/lib/conversations";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   confirmPaymentWebhook,
   pauseBotWebhook,
@@ -175,4 +176,64 @@ export async function resumeBot(
 
   revalidatePath("/conversas");
   return { ok: true };
+}
+
+/**
+ * Exclui a conversa: libera o bot no n8n (evita pausa "órfã" no Redis pra
+ * esse telefone), apaga o histórico de whatsapp_messages e o registro de
+ * procedure_bookings. NÃO mexe no evento do Google Calendar — cancelar o
+ * agendamento é uma ação diferente, fora do escopo deste botão. Falha no
+ * webhook não bloqueia a exclusão (evita deixar lixo de teste preso por
+ * causa de uma falha pontual do bot) — só avisa no toast.
+ */
+export async function deleteConversation(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const { supabase, user } = await authedClient();
+  const bookingId = String(formData.get("booking_id") ?? "");
+
+  const { data: bookingRow, error: fetchError } = await supabase
+    .from("procedure_bookings")
+    .select("patient_phone")
+    .eq("id", bookingId)
+    .single();
+  if (fetchError || !bookingRow) {
+    return { ok: false, error: "Não foi possível localizar o agendamento." };
+  }
+  const telefone = bookingRow.patient_phone;
+
+  const webhookResult = await resumeBotWebhook({ telefone, retomadoPor: user.id });
+
+  // whatsapp_messages só tem policy de RLS de select para authenticated (só
+  // o worker/service role escreve ali por padrão) — precisa do admin client
+  // pra esse delete específico, senão o Supabase bloqueia silenciosamente
+  // (0 linhas afetadas, sem erro) e a mensagem fica órfã.
+  const admin = createAdminClient();
+  const { error: messagesError } = await admin
+    .from("whatsapp_messages")
+    .delete()
+    .eq("phone", telefone);
+  if (messagesError) {
+    return { ok: false, error: `Não foi possível apagar as mensagens: ${messagesError.message}` };
+  }
+
+  const { error: bookingError } = await supabase
+    .from("procedure_bookings")
+    .delete()
+    .eq("id", bookingId);
+  if (bookingError) {
+    return { ok: false, error: `Não foi possível apagar o agendamento: ${bookingError.message}` };
+  }
+
+  revalidatePath("/conversas");
+  revalidatePath("/agenda");
+
+  if (!webhookResult.ok) {
+    return {
+      ok: true,
+      message: `Conversa excluída ✓, mas não foi possível liberar o bot para esse número — avise manualmente. (${webhookResult.error})`,
+    };
+  }
+  return { ok: true, message: "Conversa excluída ✓" };
 }
