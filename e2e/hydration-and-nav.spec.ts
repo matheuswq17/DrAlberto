@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const ROUTES = ["/", "/agenda", "/urgencias", "/encaixes", "/retornos", "/funil", "/config"];
+const ROUTES = ["/", "/agenda", "/conversas", "/urgencias", "/encaixes", "/retornos", "/funil", "/config"];
 
 function trackConsoleErrors(page: Page) {
   const errors: string[] = [];
