@@ -7,7 +7,7 @@
 // painel (evita duplo-agendamento/duplo-envio por retry às cegas) — só
 // reporta o erro para a interface avisar quem estiver usando.
 
-import { resolveRecipient } from "@/lib/evolution";
+import { normalizePhone, resolveRecipient } from "@/lib/evolution";
 
 export interface WebhookResult {
   ok: boolean;
@@ -93,7 +93,7 @@ export async function sendManualWhatsappMessage(
 ): Promise<WebhookResult> {
   const { phone, redirected } = safePhone(payload.telefone);
   const mensagem = redirected
-    ? `[TESTE — destinatário original: ${payload.telefone}]\n\n${payload.mensagem}`
+    ? `[TESTE — destinatário original: ${normalizePhone(payload.telefone)}]\n\n${payload.mensagem}`
     : payload.mensagem;
   return callWebhook("whatsapp-enviar", { telefone: phone, mensagem, enviadoPor: payload.enviadoPor });
 }
