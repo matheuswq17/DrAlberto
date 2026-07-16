@@ -7,6 +7,7 @@ import {
   BarChart3Icon,
   CalendarIcon,
   LayoutGridIcon,
+  MessageCircleIcon,
   PuzzleIcon,
   RepeatIcon,
   SettingsIcon,
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 export const NAV_ITEMS: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/", label: "Visão geral", icon: LayoutGridIcon },
   { href: "/agenda", label: "Agenda", icon: CalendarIcon },
+  { href: "/conversas", label: "Conversas", icon: MessageCircleIcon },
   { href: "/urgencias", label: "Sinalizações do bot", icon: TriangleAlertIcon },
   { href: "/encaixes", label: "Encaixes", icon: PuzzleIcon },
   { href: "/retornos", label: "Retornos", icon: RepeatIcon },
