@@ -26,7 +26,13 @@ export function entryDayLabel(dayKey: string): string {
 }
 
 /** Corpo do detalhe (sem o Dialog) — reutilizado pela visão Mês. */
-export function EntryDetailBody({ entry }: { entry: AgendaEntry }) {
+export function EntryDetailBody({
+  entry,
+  paymentPending = false,
+}: {
+  entry: AgendaEntry;
+  paymentPending?: boolean;
+}) {
   const color = entry.unit ? UNIT_COLOR[entry.unit] : NO_UNIT_COLOR;
   return (
     <div className="grid gap-3">
@@ -40,6 +46,11 @@ export function EntryDetailBody({ entry }: { entry: AgendaEntry }) {
           <StatusBadge semantic="urgent">sinalização</StatusBadge>
         </p>
       )}
+      {paymentPending && (
+        <p>
+          <StatusBadge semantic="warning">pagamento pendente</StatusBadge>
+        </p>
+      )}
       <LeadFacts lead={entry.lead} />
     </div>
   );
@@ -48,9 +59,11 @@ export function EntryDetailBody({ entry }: { entry: AgendaEntry }) {
 export function AgendaEntryDialog({
   entry,
   onClose,
+  paymentPending = false,
 }: {
   entry: AgendaEntry | null;
   onClose: () => void;
+  paymentPending?: boolean;
 }) {
   return (
     <Dialog open={entry !== null} onOpenChange={(open) => !open && onClose()}>
@@ -60,7 +73,7 @@ export function AgendaEntryDialog({
             <DialogTitle>{entry.patientLabel || "(sem título)"}</DialogTitle>
             <DialogDescription>{entryDayLabel(entry.dayKey)}</DialogDescription>
           </DialogHeader>
-          <EntryDetailBody entry={entry} />
+          <EntryDetailBody entry={entry} paymentPending={paymentPending} />
         </DialogContent>
       )}
     </Dialog>
