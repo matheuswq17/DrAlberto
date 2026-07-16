@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, TriangleAlertIcon } from "lucide-react";
 
 const WEEKDAY_HEADERS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
 
@@ -33,10 +33,12 @@ export function AgendaMonth({
   cells,
   entries,
   todayKey,
+  pendingEventIds,
 }: {
   cells: MonthCell[];
   entries: AgendaEntry[];
   todayKey: string;
+  pendingEventIds: Set<string>;
 }) {
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [selected, setSelected] = useState<AgendaEntry | null>(null);
@@ -75,6 +77,7 @@ export function AgendaMonth({
               list.some((e) => e.unit === u)
             );
             const hasNoUnit = list.some((e) => e.unit === null);
+            const hasPendingPayment = list.some((e) => pendingEventIds.has(e.id));
             const isToday = cell.key === todayKey;
             return (
               <button
@@ -113,6 +116,12 @@ export function AgendaMonth({
                         className={`size-2 rounded-full ${NO_UNIT_COLOR.dot}`}
                       />
                     )}
+                    {hasPendingPayment && (
+                      <TriangleAlertIcon
+                        aria-label="Há pagamento pendente neste dia"
+                        className="size-2.5 text-status-warning-foreground"
+                      />
+                    )}
                     <span className="text-[10px] text-muted-foreground">
                       {list.length}
                     </span>
@@ -145,7 +154,10 @@ export function AgendaMonth({
                     {entryDayLabel(selected.dayKey)}
                   </DialogDescription>
                 </DialogHeader>
-                <EntryDetailBody entry={selected} />
+                <EntryDetailBody
+                  entry={selected}
+                  paymentPending={pendingEventIds.has(selected.id)}
+                />
               </>
             ) : (
               <>
@@ -178,6 +190,12 @@ export function AgendaMonth({
                         <span className="truncate font-medium">
                           {entry.patientLabel || "(sem título)"}
                         </span>
+                        {pendingEventIds.has(entry.id) && (
+                          <TriangleAlertIcon
+                            aria-label="Pagamento pendente"
+                            className="size-3 shrink-0 text-status-warning-foreground"
+                          />
+                        )}
                       </button>
                     );
                   })}
