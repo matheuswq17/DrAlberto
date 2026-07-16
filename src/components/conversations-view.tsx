@@ -51,6 +51,26 @@ export function ConversationsView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Atualização automática da conversa aberta — sem isso, mensagens novas do
+  // paciente só apareceriam depois de um F5 manual. Refetch silencioso (sem
+  // passar por startLoadingMessages) para não piscar "Carregando…" a cada
+  // 4s; o interval é recriado a cada troca de paciente e o cleanup do efeito
+  // já cobre tanto a troca quanto sair da aba (unmount).
+  useEffect(() => {
+    const phone = selected?.patientPhone;
+    if (!phone) return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      const rows = await getMessagesAction(phone);
+      if (!cancelled) setMessages(rows);
+    }, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
   function handleMessageSent(text: string) {
     if (!selected) return;
     const optimistic: MessageRow = {
