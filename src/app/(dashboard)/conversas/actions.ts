@@ -64,7 +64,16 @@ export async function confirmPayment(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
-  const telefone = String(formData.get("telefone") ?? "");
+
+  const { data: bookingRow, error: fetchError } = await supabase
+    .from("procedure_bookings")
+    .select("patient_phone")
+    .eq("id", bookingId)
+    .single();
+  if (fetchError || !bookingRow) {
+    return { ok: false, error: "Não foi possível localizar o agendamento." };
+  }
+  const telefone = bookingRow.patient_phone;
 
   const result = await confirmPaymentWebhook({
     idAgendamento: bookingId,
@@ -84,8 +93,8 @@ export async function confirmPayment(
     .eq("id", bookingId);
   if (error) {
     return {
-      ok: false,
-      error: `Pagamento confirmado no bot, mas falhou ao atualizar o painel: ${error.message}. Recarregue a página.`,
+      ok: true,
+      message: `Pagamento confirmado ✓, mas o painel não sincronizou localmente (${error.message}) — recarregue a página para conferir.`,
     };
   }
 
@@ -100,7 +109,16 @@ export async function pauseBot(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
-  const telefone = String(formData.get("telefone") ?? "");
+
+  const { data: bookingRow, error: fetchError } = await supabase
+    .from("procedure_bookings")
+    .select("patient_phone")
+    .eq("id", bookingId)
+    .single();
+  if (fetchError || !bookingRow) {
+    return { ok: false, error: "Não foi possível localizar o agendamento." };
+  }
+  const telefone = bookingRow.patient_phone;
 
   const result = await pauseBotWebhook({ telefone, motivo: "manual", pausadoPor: user.id });
   if (!result.ok) {
@@ -113,8 +131,8 @@ export async function pauseBot(
     .eq("id", bookingId);
   if (error) {
     return {
-      ok: false,
-      error: `Bot pausado, mas falhou ao atualizar o painel: ${error.message}. Recarregue a página.`,
+      ok: true,
+      message: `Bot pausado ✓, mas o painel não sincronizou localmente (${error.message}) — recarregue a página para conferir.`,
     };
   }
 
@@ -128,7 +146,16 @@ export async function resumeBot(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
-  const telefone = String(formData.get("telefone") ?? "");
+
+  const { data: bookingRow, error: fetchError } = await supabase
+    .from("procedure_bookings")
+    .select("patient_phone")
+    .eq("id", bookingId)
+    .single();
+  if (fetchError || !bookingRow) {
+    return { ok: false, error: "Não foi possível localizar o agendamento." };
+  }
+  const telefone = bookingRow.patient_phone;
 
   const result = await resumeBotWebhook({ telefone, retomadoPor: user.id });
   if (!result.ok) {
@@ -141,8 +168,8 @@ export async function resumeBot(
     .eq("id", bookingId);
   if (error) {
     return {
-      ok: false,
-      error: `Bot retomado, mas falhou ao atualizar o painel: ${error.message}. Recarregue a página.`,
+      ok: true,
+      message: `Bot retomado ✓, mas o painel não sincronizou localmente (${error.message}) — recarregue a página para conferir.`,
     };
   }
 
