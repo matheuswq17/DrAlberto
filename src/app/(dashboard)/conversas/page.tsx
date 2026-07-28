@@ -15,7 +15,7 @@ export default async function ConversasPage() {
       <PageHeader
         eyebrow="Conversas"
         title="Conversas"
-        description="Histórico de WhatsApp dos pacientes com procedimento marcado. Envio manual pausa o bot automaticamente para esse número (fase 1: não inclui consultas normais do bot)."
+        description="Histórico de WhatsApp dos pacientes com procedimento ou consulta marcados. Envio manual pausa o bot automaticamente para esse número."
       />
       <ConversationsView
         initialBookings={bookings}

@@ -1,8 +1,8 @@
 "use client";
 
-// Lista à esquerda da aba Conversas — pacientes com procedimento marcado,
-// mais recentes primeiro (fase 1: só procedimentos, não é caixa de entrada
-// geral do bot).
+// Lista à esquerda da aba Conversas — pacientes com procedimento ou consulta
+// marcados, mais recentes primeiro. Unifica as duas origens (procedure_bookings
+// e consultation_bookings); não é caixa de entrada geral do bot.
 
 import { PhoneReveal } from "@/components/phone-reveal";
 import { StatusBadge } from "@/components/status-badge";
@@ -23,7 +23,7 @@ export function ConversationList({
   if (bookings.length === 0) {
     return (
       <div className="p-4">
-        <EmptyState icon={InboxIcon}>Nenhum procedimento marcado ainda.</EmptyState>
+        <EmptyState icon={InboxIcon}>Nenhuma conversa ainda.</EmptyState>
       </div>
     );
   }
@@ -53,7 +53,7 @@ export function ConversationList({
               {b.paymentStatus === "pendente" ? "pendente" : "confirmado"}
             </StatusBadge>
           </div>
-          <p className="truncate text-xs text-muted-foreground">{b.procedureName}</p>
+          <p className="truncate text-xs text-muted-foreground">{b.serviceLabel}</p>
           <div className="flex items-center justify-between gap-2">
             <PhoneReveal phone={b.patientPhone} className="text-xs" />
             {b.botPaused && (

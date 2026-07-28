@@ -65,9 +65,11 @@ export async function confirmPayment(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
+  const kind = String(formData.get("kind") ?? "procedimento");
+  const table = kind === "consulta" ? "consultation_bookings" : "procedure_bookings";
 
   const { data: bookingRow, error: fetchError } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .select("patient_phone")
     .eq("id", bookingId)
     .single();
@@ -89,7 +91,7 @@ export async function confirmPayment(
   }
 
   const { error } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .update({ payment_status: "confirmado", updated_at: new Date().toISOString() })
     .eq("id", bookingId);
   if (error) {
@@ -110,9 +112,11 @@ export async function pauseBot(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
+  const kind = String(formData.get("kind") ?? "procedimento");
+  const table = kind === "consulta" ? "consultation_bookings" : "procedure_bookings";
 
   const { data: bookingRow, error: fetchError } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .select("patient_phone")
     .eq("id", bookingId)
     .single();
@@ -127,7 +131,7 @@ export async function pauseBot(
   }
 
   const { error } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .update({ bot_paused: true, updated_at: new Date().toISOString() })
     .eq("id", bookingId);
   if (error) {
@@ -147,9 +151,11 @@ export async function resumeBot(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
+  const kind = String(formData.get("kind") ?? "procedimento");
+  const table = kind === "consulta" ? "consultation_bookings" : "procedure_bookings";
 
   const { data: bookingRow, error: fetchError } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .select("patient_phone")
     .eq("id", bookingId)
     .single();
@@ -164,7 +170,7 @@ export async function resumeBot(
   }
 
   const { error } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .update({ bot_paused: false, updated_at: new Date().toISOString() })
     .eq("id", bookingId);
   if (error) {
@@ -192,9 +198,11 @@ export async function deleteConversation(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
+  const kind = String(formData.get("kind") ?? "procedimento");
+  const table = kind === "consulta" ? "consultation_bookings" : "procedure_bookings";
 
   const { data: bookingRow, error: fetchError } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .select("patient_phone")
     .eq("id", bookingId)
     .single();
@@ -219,7 +227,7 @@ export async function deleteConversation(
   }
 
   const { error: bookingError } = await supabase
-    .from("procedure_bookings")
+    .from(table)
     .delete()
     .eq("id", bookingId);
   if (bookingError) {

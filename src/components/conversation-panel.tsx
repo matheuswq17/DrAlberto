@@ -119,7 +119,7 @@ export function ConversationPanel({
   function confirmDelete(e: React.FormEvent<HTMLFormElement>) {
     const confirmed = window.confirm(
       `Excluir a conversa de ${booking.patientName}?\n\n` +
-        "Isso apaga o histórico de mensagens e o registro do procedimento, e libera o bot para esse número. " +
+        `Isso apaga o histórico de mensagens e o registro do ${booking.kind === "procedimento" ? "procedimento" : "consulta"}, e libera o bot para esse número. ` +
         "Isso NÃO cancela o evento na agenda — só limpa o histórico de conversa. Essa ação não pode ser desfeita."
     );
     if (!confirmed) e.preventDefault();
@@ -138,6 +138,7 @@ export function ConversationPanel({
           {booking.paymentStatus === "pendente" && (
             <form action={paymentFormAction}>
               <input type="hidden" name="booking_id" value={booking.id} />
+              <input type="hidden" name="kind" value={booking.kind} />
               <SubmitButton pendingLabel="Confirmando…" variant="outline" size="sm">
                 Confirmar pagamento
               </SubmitButton>
@@ -146,6 +147,7 @@ export function ConversationPanel({
           {booking.botPaused ? (
             <form action={resumeFormAction}>
               <input type="hidden" name="booking_id" value={booking.id} />
+              <input type="hidden" name="kind" value={booking.kind} />
               <SubmitButton pendingLabel="Retomando…" variant="outline" size="sm">
                 Retomar bot
               </SubmitButton>
@@ -153,6 +155,7 @@ export function ConversationPanel({
           ) : (
             <form action={pauseFormAction}>
               <input type="hidden" name="booking_id" value={booking.id} />
+              <input type="hidden" name="kind" value={booking.kind} />
               <SubmitButton pendingLabel="Pausando…" variant="outline" size="sm">
                 Pausar bot
               </SubmitButton>
@@ -160,6 +163,7 @@ export function ConversationPanel({
           )}
           <form action={deleteFormAction} onSubmit={confirmDelete}>
             <input type="hidden" name="booking_id" value={booking.id} />
+            <input type="hidden" name="kind" value={booking.kind} />
             <SubmitButton pendingLabel="Excluindo…" variant="destructive" size="sm">
               Excluir conversa
             </SubmitButton>
