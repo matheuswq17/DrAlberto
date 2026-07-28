@@ -6,8 +6,13 @@ import { getGoogleAuth } from "./auth";
 //   Data | Nome | Telefone | Cidade | Procedimento | Convenio | Tem Pedido |
 //   Exames | Previos | Tipo Handoff | Urgencia | Status
 // O mapeamento é por apelidos de cabeçalho normalizados; colunas extras ficam
-// acessíveis em `raw`. Não existe coluna de sintomas nem de pergunta de FAQ
-// hoje — esses campos ficam vazios até o bot passar a registrá-los.
+// acessíveis em `raw`. Não existe coluna de pergunta de FAQ hoje — esse campo
+// fica vazio até o bot passar a registrá-lo.
+// Atualizado em 2026-07-28: o bot passou a preencher "Exames" com o flag
+// tem_exame (Sim/Não) e "Previos" com a queixa/motivo da consulta relatada
+// pelo paciente — por isso "previos" foi adicionado como apelido de `sintomas`
+// abaixo (reaproveita a coluna existente, sem precisar mudar o cabeçalho real
+// da planilha).
 
 export interface Lead {
   name: string;
@@ -33,7 +38,7 @@ const HEADER_ALIASES: Record<keyof Omit<Lead, "raw">, string[]> = {
   phone: ["telefone", "fone", "whatsapp", "numero", "celular", "phone"],
   motivo: ["motivo", "procedimento", "motivo da consulta", "motivo_consulta", "queixa"],
   examePendente: ["exame pendente", "exame_pendente", "exames pendentes", "exames", "exame"],
-  sintomas: ["sintomas", "sintomas-chave", "sintomas chave", "sintomas_chave"],
+  sintomas: ["sintomas", "sintomas-chave", "sintomas chave", "sintomas_chave", "previos"],
   urgencia: ["urgencia_dr", "urgencia", "urgente"],
   tipo: ["tipo", "tipo handoff", "tipo de conversa", "tipo_conversa", "categoria", "intencao"],
   perguntaFaq: ["pergunta", "pergunta_faq", "faq", "pergunta faq"],
