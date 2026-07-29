@@ -65,7 +65,7 @@ export async function confirmPayment(
 ): Promise<ActionState> {
   const { supabase, user } = await authedClient();
   const bookingId = String(formData.get("booking_id") ?? "");
-  const kind = String(formData.get("kind") ?? "procedimento");
+  const kind = String(formData.get("kind") ?? "procedimento") as "procedimento" | "consulta";
   const table = kind === "consulta" ? "consultation_bookings" : "procedure_bookings";
 
   const { data: bookingRow, error: fetchError } = await supabase
@@ -82,6 +82,7 @@ export async function confirmPayment(
     idAgendamento: bookingId,
     telefone,
     confirmadoPor: user.id,
+    kind,
   });
   if (!result.ok) {
     return {

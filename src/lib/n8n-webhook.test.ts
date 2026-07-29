@@ -130,6 +130,7 @@ describe("confirmPaymentWebhook / pauseBotWebhook / resumeBotWebhook", () => {
       idAgendamento: "id-1",
       telefone: "5562999998888",
       confirmadoPor: "profile-1",
+      kind: "procedimento",
     });
     await pauseBotWebhook({
       telefone: "5562999998888",
@@ -144,6 +145,24 @@ describe("confirmPaymentWebhook / pauseBotWebhook / resumeBotWebhook", () => {
     for (const call of fetchMock.mock.calls) {
       expect(JSON.parse(call[1].body).telefone).toBe("5511939011304");
     }
+  });
+
+  it("confirmPaymentWebhook chama o path de consulta quando kind é 'consulta'", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await confirmPaymentWebhook({
+      idAgendamento: "id-2",
+      telefone: "5562999998888",
+      confirmadoPor: "profile-1",
+      kind: "consulta",
+    });
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://n8n.example.com/webhook/consulta-pagamento-confirmada"
+    );
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.kind).toBeUndefined();
   });
 });
 

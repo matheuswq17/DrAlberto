@@ -102,13 +102,16 @@ export interface ConfirmPaymentPayload {
   idAgendamento: string;
   telefone: string;
   confirmadoPor: string;
+  kind: "procedimento" | "consulta";
 }
 
 export async function confirmPaymentWebhook(
   payload: ConfirmPaymentPayload
 ): Promise<WebhookResult> {
   const { phone } = safePhone(payload.telefone);
-  return callWebhook("confirmar-pagamento", { ...payload, telefone: phone });
+  const { kind, ...rest } = payload;
+  const path = kind === "consulta" ? "consulta-pagamento-confirmada" : "confirmar-pagamento";
+  return callWebhook(path, { ...rest, telefone: phone });
 }
 
 export interface PauseBotPayload {
