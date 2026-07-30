@@ -19,6 +19,7 @@ export function ConversationsView({
   getMessagesAction,
   sendMessageAction,
   confirmPaymentAction,
+  confirmInsuranceAction,
   pauseBotAction,
   resumeBotAction,
   deleteConversationAction,
@@ -27,6 +28,7 @@ export function ConversationsView({
   getMessagesAction: (phone: string) => Promise<MessageRow[]>;
   sendMessageAction: FormAction;
   confirmPaymentAction: FormAction;
+  confirmInsuranceAction: FormAction;
   pauseBotAction: FormAction;
   resumeBotAction: FormAction;
   deleteConversationAction: FormAction;
@@ -93,6 +95,13 @@ export function ConversationsView({
     );
   }
 
+  function handleInsuranceConfirmed() {
+    if (!selected) return;
+    setBookings((prev) =>
+      prev.map((b) => (b.id === selected.id ? { ...b, convenioStatus: "confirmado" as const } : b))
+    );
+  }
+
   function handleBotPauseToggled(paused: boolean) {
     if (!selected) return;
     setBookings((prev) => prev.map((b) => (b.id === selected.id ? { ...b, botPaused: paused } : b)));
@@ -118,10 +127,12 @@ export function ConversationsView({
             loadingMessages={loadingMessages}
             onMessageSent={handleMessageSent}
             onPaymentConfirmed={handlePaymentConfirmed}
+            onInsuranceConfirmed={handleInsuranceConfirmed}
             onBotPauseToggled={handleBotPauseToggled}
             onConversationDeleted={handleConversationDeleted}
             sendMessageAction={sendMessageAction}
             confirmPaymentAction={confirmPaymentAction}
+            confirmInsuranceAction={confirmInsuranceAction}
             pauseBotAction={pauseBotAction}
             resumeBotAction={resumeBotAction}
             deleteConversationAction={deleteConversationAction}

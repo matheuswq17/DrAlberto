@@ -1,6 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { getConversationBookings } from "@/lib/conversations";
-import { getMessages, sendManualMessage, confirmPayment, pauseBot, resumeBot, deleteConversation } from "./actions";
+import {
+  getMessages,
+  sendManualMessage,
+  confirmPayment,
+  confirmInsurance,
+  pauseBot,
+  resumeBot,
+  deleteConversation,
+} from "./actions";
 import { ConversationsView } from "@/components/conversations-view";
 import { PageHeader } from "@/components/page-header";
 
@@ -22,6 +30,7 @@ export default async function ConversasPage() {
         getMessagesAction={getMessages}
         sendMessageAction={sendManualMessage}
         confirmPaymentAction={confirmPayment}
+        confirmInsuranceAction={confirmInsurance}
         pauseBotAction={pauseBot}
         resumeBotAction={resumeBot}
         deleteConversationAction={deleteConversation}

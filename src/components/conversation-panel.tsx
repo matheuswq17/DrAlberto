@@ -32,10 +32,12 @@ export function ConversationPanel({
   loadingMessages,
   onMessageSent,
   onPaymentConfirmed,
+  onInsuranceConfirmed,
   onBotPauseToggled,
   onConversationDeleted,
   sendMessageAction,
   confirmPaymentAction,
+  confirmInsuranceAction,
   pauseBotAction,
   resumeBotAction,
   deleteConversationAction,
@@ -45,16 +47,22 @@ export function ConversationPanel({
   loadingMessages: boolean;
   onMessageSent: (text: string) => void;
   onPaymentConfirmed: () => void;
+  onInsuranceConfirmed: () => void;
   onBotPauseToggled: (paused: boolean) => void;
   onConversationDeleted: () => void;
   sendMessageAction: FormAction;
   confirmPaymentAction: FormAction;
+  confirmInsuranceAction: FormAction;
   pauseBotAction: FormAction;
   resumeBotAction: FormAction;
   deleteConversationAction: FormAction;
 }) {
   const [sendState, sendFormAction] = useActionState<ActionState, FormData>(sendMessageAction, null);
   const [paymentState, paymentFormAction] = useActionState<ActionState, FormData>(confirmPaymentAction, null);
+  const [insuranceState, insuranceFormAction] = useActionState<ActionState, FormData>(
+    confirmInsuranceAction,
+    null
+  );
   const [pauseState, pauseFormAction] = useActionState<ActionState, FormData>(pauseBotAction, null);
   const [resumeState, resumeFormAction] = useActionState<ActionState, FormData>(resumeBotAction, null);
   const [deleteState, deleteFormAction] = useActionState<ActionState, FormData>(deleteConversationAction, null);
@@ -82,6 +90,21 @@ export function ConversationPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentState]);
+
+  useEffect(() => {
+    if (!insuranceState) return;
+    if (insuranceState.ok) {
+      toastManager.add({
+        title: insuranceState.message ?? "Convênio confirmado ✓",
+        type: "success",
+        timeout: 4000,
+      });
+      onInsuranceConfirmed();
+    } else {
+      toastManager.add({ title: insuranceState.error, type: "error", timeout: 5000 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insuranceState]);
 
   useEffect(() => {
     if (!pauseState) return;
@@ -128,21 +151,37 @@ export function ConversationPanel({
   return (
     <div className="grid h-full grid-rows-[auto_1fr_auto] gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{booking.patientName}</span>
-          <StatusBadge semantic={booking.botPaused ? "warning" : "ok"}>
-            {booking.botPaused ? "bot pausado" : "bot ativo"}
-          </StatusBadge>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{booking.patientName}</span>
+            <StatusBadge semantic={booking.botPaused ? "warning" : "ok"}>
+              {booking.botPaused ? "bot pausado" : "bot ativo"}
+            </StatusBadge>
+          </div>
+          {booking.tipoPlano === "integral" && (
+            <span className="text-xs text-muted-foreground">
+              Convênio integral{booking.carteirinhaNumero ? ` — carteirinha ${booking.carteirinhaNumero}` : " — sem carteirinha informada"}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          {booking.paymentStatus === "pendente" && (
-            <form action={paymentFormAction}>
+          {booking.convenioStatus === "pendente" ? (
+            <form action={insuranceFormAction}>
               <input type="hidden" name="booking_id" value={booking.id} />
-              <input type="hidden" name="kind" value={booking.kind} />
               <SubmitButton pendingLabel="Confirmando…" variant="outline" size="sm">
-                Confirmar pagamento
+                Confirmar convênio
               </SubmitButton>
             </form>
+          ) : (
+            booking.paymentStatus === "pendente" && (
+              <form action={paymentFormAction}>
+                <input type="hidden" name="booking_id" value={booking.id} />
+                <input type="hidden" name="kind" value={booking.kind} />
+                <SubmitButton pendingLabel="Confirmando…" variant="outline" size="sm">
+                  Confirmar pagamento
+                </SubmitButton>
+              </form>
+            )
           )}
           {booking.botPaused ? (
             <form action={resumeFormAction}>
