@@ -9,6 +9,12 @@ export interface ConversationBooking {
   paymentStatus: "pendente" | "confirmado";
   botPaused: boolean;
   createdAt: string;
+  // Só preenchido para kind==="consulta" com convênio integral (tipo_plano==="integral")
+  // — nesse caso a consulta não passa por pagamento Pix, e sim por confirmação do
+  // financeiro sobre a cobertura do convênio (ver 0007_consultation_bookings_convenio.sql).
+  tipoPlano: string | null;
+  convenioStatus: "pendente" | "confirmado" | null;
+  carteirinhaNumero: string | null;
 }
 
 export interface MessageRow {
@@ -37,6 +43,9 @@ interface ConsultationBookingRow {
   payment_status: "pendente" | "confirmado";
   bot_paused: boolean;
   created_at: string;
+  tipo_plano: string | null;
+  convenio_status: "pendente" | "confirmado" | null;
+  carteirinha_numero: string | null;
 }
 
 const LOCAL_LABELS: Record<string, string> = {
@@ -61,7 +70,9 @@ export async function getConversationBookings(
       .order("created_at", { ascending: false }),
     supabase
       .from("consultation_bookings")
-      .select("id, patient_name, patient_phone, local, payment_status, bot_paused, created_at")
+      .select(
+        "id, patient_name, patient_phone, local, payment_status, bot_paused, created_at, tipo_plano, convenio_status, carteirinha_numero"
+      )
       .order("created_at", { ascending: false }),
   ]);
 
@@ -84,6 +95,9 @@ export async function getConversationBookings(
       paymentStatus: row.payment_status,
       botPaused: row.bot_paused,
       createdAt: row.created_at,
+      tipoPlano: null,
+      convenioStatus: null,
+      carteirinhaNumero: null,
     };
   });
 
@@ -98,6 +112,9 @@ export async function getConversationBookings(
     paymentStatus: row.payment_status,
     botPaused: row.bot_paused,
     createdAt: row.created_at,
+    tipoPlano: row.tipo_plano,
+    convenioStatus: row.convenio_status,
+    carteirinhaNumero: row.carteirinha_numero,
   }));
 
   return [...procedureBookings, ...consultationBookings].sort(
