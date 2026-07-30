@@ -114,6 +114,21 @@ export async function confirmPaymentWebhook(
   return callWebhook(path, { ...rest, telefone: phone });
 }
 
+export interface ConfirmInsurancePayload {
+  idAgendamento: string;
+  telefone: string;
+  confirmadoPor: string;
+}
+
+/** Só se aplica a consultation_bookings — convênio integral não existe no fluxo de
+ * procedimentos (esses continuam sempre pelo webhook de pagamento). */
+export async function confirmInsuranceWebhook(
+  payload: ConfirmInsurancePayload
+): Promise<WebhookResult> {
+  const { phone } = safePhone(payload.telefone);
+  return callWebhook("consulta-convenio-confirmada", { ...payload, telefone: phone });
+}
+
 export interface PauseBotPayload {
   telefone: string;
   motivo: string;
