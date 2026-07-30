@@ -6,6 +6,7 @@ import type { MessageRow } from "@/lib/conversations";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  confirmInsuranceWebhook,
   confirmPaymentWebhook,
   pauseBotWebhook,
   resumeBotWebhook,
@@ -99,6 +100,58 @@ export async function confirmPayment(
     return {
       ok: true,
       message: `Pagamento confirmado ✓, mas o painel não sincronizou localmente (${error.message}) — recarregue a página para conferir.`,
+    };
+  }
+
+  revalidatePath("/agenda");
+  revalidatePath("/conversas");
+  return { ok: true };
+}
+
+/**
+ * Confirma a cobertura do convênio de uma consulta (fluxo de convênio integral,
+ * que não passa por pagamento Pix — só existe para "consulta", nunca para
+ * "procedimento"). Mesmo padrão de confirmPayment: só marca convenio_status
+ * localmente depois que o webhook do n8n confirma (mensagem ao paciente +
+ * atualização na planilha + bot despausado).
+ */
+export async function confirmInsurance(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const { supabase, user } = await authedClient();
+  const bookingId = String(formData.get("booking_id") ?? "");
+
+  const { data: bookingRow, error: fetchError } = await supabase
+    .from("consultation_bookings")
+    .select("patient_phone")
+    .eq("id", bookingId)
+    .single();
+  if (fetchError || !bookingRow) {
+    return { ok: false, error: "Não foi possível localizar o agendamento." };
+  }
+  const telefone = bookingRow.patient_phone;
+
+  const result = await confirmInsuranceWebhook({
+    idAgendamento: bookingId,
+    telefone,
+    confirmadoPor: user.id,
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: `Não foi possível confirmar o convênio, tente novamente. (${result.error})`,
+    };
+  }
+
+  const { error } = await supabase
+    .from("consultation_bookings")
+    .update({ convenio_status: "confirmado", updated_at: new Date().toISOString() })
+    .eq("id", bookingId);
+  if (error) {
+    return {
+      ok: true,
+      message: `Convênio confirmado ✓, mas o painel não sincronizou localmente (${error.message}) — recarregue a página para conferir.`,
     };
   }
 
