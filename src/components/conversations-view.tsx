@@ -119,7 +119,7 @@ export function ConversationsView({
       <div className="overflow-y-auto rounded-lg border bg-card">
         <ConversationList bookings={bookings} selectedId={selectedId} onSelect={selectBooking} />
       </div>
-      <div className="rounded-lg border bg-card p-4">
+      <div className="min-h-0 rounded-lg border bg-card p-4">
         {selected ? (
           <ConversationPanel
             booking={selected}

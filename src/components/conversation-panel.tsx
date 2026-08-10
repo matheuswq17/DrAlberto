@@ -149,7 +149,7 @@ export function ConversationPanel({
   }
 
   return (
-    <div className="grid h-full grid-rows-[auto_1fr_auto] gap-3">
+    <div className="grid h-full min-h-0 grid-rows-[auto_1fr_auto] gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export function ConversationPanel({
         </div>
       </div>
 
-      <div className="grid gap-2 overflow-y-auto py-2">
+      <div className="grid min-h-0 gap-2 overflow-y-auto py-2">
         {loadingMessages ? (
           <p className="text-sm text-muted-foreground">Carregando mensagens…</p>
         ) : messages.length === 0 ? (
