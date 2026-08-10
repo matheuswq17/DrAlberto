@@ -310,32 +310,24 @@ async function WeekView({
       {calendarOk && (
         <>
           <AgendaLegend showNoUnit={entries.some((e) => e.unit === null)} />
-          {entries.length === 0 ? (
-            <Card>
-              <CardContent className="grid gap-2 py-8 text-center">
-                <EmptyState icon={CalendarX2Icon} className="justify-center">
-                  Nenhuma consulta nesta semana.
-                </EmptyState>
-                <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <AgendaWeek
-                days={days}
-                entries={entries}
-                startHour={startHour}
-                endHour={endHour}
-                pendingEventIds={pendingEventIds}
-                procedures={procedures}
-                bookAction={bookProcedure}
-                procedureBookings={procedureBookings}
-                cancelAction={cancelProcedure}
-                rescheduleAction={rescheduleProcedure}
-              />
-              <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
-            </>
+          {entries.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma consulta marcada nesta semana.
+            </p>
           )}
+          <AgendaWeek
+            days={days}
+            entries={entries}
+            startHour={startHour}
+            endHour={endHour}
+            pendingEventIds={pendingEventIds}
+            procedures={procedures}
+            bookAction={bookProcedure}
+            procedureBookings={procedureBookings}
+            cancelAction={cancelProcedure}
+            rescheduleAction={rescheduleProcedure}
+          />
+          <ReadOkStamp readAt={readAt} label="Leitura do calendário OK" />
         </>
       )}
       {!calendarOk && (
