@@ -5,7 +5,7 @@
 // consulta é um procedimento marcado pelo painel (não uma consulta do bot),
 // mostra também os botões "Alterar data/hora" e "Desmarcar".
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { AgendaEntry } from "@/lib/agenda";
 import { spDayKey, spWallMinutes } from "@/lib/sp-time";
 import type { ActionState } from "@/lib/action-state";
@@ -14,6 +14,7 @@ import { UNIT_COLOR, UNIT_LABELS, NO_UNIT_COLOR } from "@/lib/units";
 import { LeadFacts } from "@/components/patient-info";
 import { StatusBadge } from "@/components/status-badge";
 import { toastManager } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -103,12 +104,22 @@ export function EntryDetailBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rescheduleState]);
 
-  function confirmCancel(e: React.FormEvent<HTMLFormElement>) {
-    const confirmed = window.confirm(
-      `Desmarcar o procedimento de ${procedureBooking?.patientName ?? entry.patientLabel}?\n\n` +
-        "Isso apaga o evento da agenda e avisa o paciente pelo WhatsApp. Essa ação não pode ser desfeita."
-    );
-    if (!confirmed) e.preventDefault();
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const cancelConfirmedRef = useRef(false);
+  const cancelFormRef = useRef<HTMLFormElement>(null);
+
+  function interceptCancelSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (cancelConfirmedRef.current) {
+      cancelConfirmedRef.current = false;
+      return;
+    }
+    e.preventDefault();
+    setCancelDialogOpen(true);
+  }
+
+  function confirmCancel() {
+    cancelConfirmedRef.current = true;
+    cancelFormRef.current?.requestSubmit();
   }
 
   if (mode === "reschedule" && procedureBooking) {
@@ -172,12 +183,20 @@ export function EntryDetailBody({
           <Button type="button" variant="outline" size="sm" onClick={() => setMode("reschedule")}>
             Alterar data/hora
           </Button>
-          <form action={cancelFormAction} onSubmit={confirmCancel}>
+          <form ref={cancelFormRef} action={cancelFormAction} onSubmit={interceptCancelSubmit}>
             <input type="hidden" name="booking_id" value={procedureBooking.id} />
             <SubmitButton pendingLabel="Desmarcando…" variant="destructive" size="sm">
               Desmarcar
             </SubmitButton>
           </form>
+          <ConfirmDialog
+            open={cancelDialogOpen}
+            onOpenChange={setCancelDialogOpen}
+            title={`Desmarcar o procedimento de ${procedureBooking.patientName ?? entry.patientLabel}?`}
+            description="Isso apaga o evento da agenda e avisa o paciente pelo WhatsApp. Essa ação não pode ser desfeita."
+            confirmLabel="Desmarcar"
+            onConfirm={confirmCancel}
+          />
         </div>
       )}
     </div>

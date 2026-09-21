@@ -3,11 +3,12 @@
 // Painel de conversa à direita — histórico de whatsapp_messages do paciente
 // selecionado, composer de envio manual, e os botões de pagamento/pausa.
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { ActionState } from "@/lib/action-state";
 import type { ConversationBooking, MessageRow } from "@/lib/conversations";
 import { cn } from "@/lib/utils";
 import { toastManager } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmitButton } from "@/components/submit-button";
 import { Textarea } from "@/components/ui/textarea";
@@ -139,13 +140,22 @@ export function ConversationPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deleteState]);
 
-  function confirmDelete(e: React.FormEvent<HTMLFormElement>) {
-    const confirmed = window.confirm(
-      `Excluir a conversa de ${booking.patientName}?\n\n` +
-        `Isso apaga o histórico de mensagens e o registro do ${booking.kind === "procedimento" ? "procedimento" : "consulta"}, e libera o bot para esse número. ` +
-        "Isso NÃO cancela o evento na agenda — só limpa o histórico de conversa. Essa ação não pode ser desfeita."
-    );
-    if (!confirmed) e.preventDefault();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const deleteConfirmedRef = useRef(false);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
+
+  function interceptDeleteSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (deleteConfirmedRef.current) {
+      deleteConfirmedRef.current = false;
+      return;
+    }
+    e.preventDefault();
+    setDeleteDialogOpen(true);
+  }
+
+  function confirmDelete() {
+    deleteConfirmedRef.current = true;
+    deleteFormRef.current?.requestSubmit();
   }
 
   return (
@@ -200,13 +210,24 @@ export function ConversationPanel({
               </SubmitButton>
             </form>
           )}
-          <form action={deleteFormAction} onSubmit={confirmDelete}>
+          <form ref={deleteFormRef} action={deleteFormAction} onSubmit={interceptDeleteSubmit}>
             <input type="hidden" name="booking_id" value={booking.id} />
             <input type="hidden" name="kind" value={booking.kind} />
             <SubmitButton pendingLabel="Excluindo…" variant="destructive" size="sm">
               Excluir conversa
             </SubmitButton>
           </form>
+          <ConfirmDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            title={`Excluir a conversa de ${booking.patientName}?`}
+            description={
+              `Isso apaga o histórico de mensagens e o registro do ${booking.kind === "procedimento" ? "procedimento" : "consulta"}, e libera o bot para esse número.\n\n` +
+              "Isso NÃO cancela o evento na agenda — só limpa o histórico de conversa. Essa ação não pode ser desfeita."
+            }
+            confirmLabel="Excluir conversa"
+            onConfirm={confirmDelete}
+          />
         </div>
       </div>
 
