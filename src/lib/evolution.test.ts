@@ -58,4 +58,16 @@ describe("safe mode (regra inviolável)", () => {
     expect(r.redirected).toBe(false);
     expect(r.to).toBe("5562988882222");
   });
+
+  it("aceita lista de números de teste separada por vírgula", () => {
+    process.env.WHATSAPP_TEST_NUMBER = "11939011304,11953605911,11957780358";
+
+    expect(resolveRecipient("11939011304").redirected).toBe(false);
+    expect(resolveRecipient("11953605911").redirected).toBe(false);
+    expect(resolveRecipient("(11) 95778-0358").redirected).toBe(false);
+
+    const outro = resolveRecipient("62988882222");
+    expect(outro.redirected).toBe(true);
+    expect(outro.to).toBe("5511939011304");
+  });
 });

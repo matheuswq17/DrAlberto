@@ -1,9 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // ÚNICO ponto de envio de WhatsApp de todo o projeto (regra inviolável).
-// - Safe mode (default): TODO envio é redirecionado para o número de teste
-//   autorizado 11939011304. Só desligar com WHATSAPP_SAFE_MODE=false em
-//   produção, após ok explícito do Matheus.
+// - Safe mode (default): TODO envio é redirecionado para um dos números de
+//   teste autorizados (WHATSAPP_TEST_NUMBER, lista separada por vírgula).
+//   Só desligar com WHATSAPP_SAFE_MODE=false em produção, após ok explícito
+//   do Matheus.
 // - Todo envio bem-sucedido é registrado em message_log.
 
 export type MessageKind =
@@ -24,17 +25,25 @@ export function normalizePhone(phone: string): string {
   return `55${digits}`;
 }
 
+/** Lista de números de teste autorizados (o primeiro é o destino padrão do redirecionamento). */
+function testNumbers(): string[] {
+  const raw = process.env.WHATSAPP_TEST_NUMBER ?? DEFAULT_TEST_NUMBER;
+  return raw
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean)
+    .map(normalizePhone);
+}
+
 /** Decide o destinatário real, aplicando a allowlist do safe mode. */
 export function resolveRecipient(phone: string): {
   to: string;
   redirected: boolean;
 } {
-  const testNumber = normalizePhone(
-    process.env.WHATSAPP_TEST_NUMBER ?? DEFAULT_TEST_NUMBER
-  );
+  const allowed = testNumbers();
   const normalized = normalizePhone(phone);
-  if (isSafeMode() && normalized !== testNumber) {
-    return { to: testNumber, redirected: true };
+  if (isSafeMode() && !allowed.includes(normalized)) {
+    return { to: allowed[0], redirected: true };
   }
   return { to: normalized, redirected: false };
 }
